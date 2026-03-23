@@ -102,8 +102,8 @@ export default function UploadMedia({
     return false;
   };
 
-  /** 单文件完整上传流程：MD5 → check → upload → insert */
-  const processFile = (item: FileItem): Promise<void> =>
+  /** 单文件完整上传流程：MD5 → check → upload → insert，返回是否成功 */
+  const processFile = (item: FileItem): Promise<boolean> =>
     new Promise(async (resolve) => {
       try {
         // ── Step 1: 计算 MD5 ──────────────────────────────────────
@@ -126,7 +126,7 @@ export default function UploadMedia({
         if (checkData.code === 200) {
           // 文件已存在，跳过上传
           updateItem(item.uid, { status: "duplicate", percent: 100 });
-          resolve();
+          resolve(true);
           return;
         }
 
@@ -170,7 +170,7 @@ export default function UploadMedia({
             status: "error",
             errorMsg: uploadResult?.msg || "上传失败",
           });
-          resolve();
+          resolve(false);
           return;
         }
 
@@ -188,13 +188,15 @@ export default function UploadMedia({
 
         if (insertData.code === 200) {
           updateItem(item.uid, { status: "done", percent: 100 });
+          resolve(true);
         } else {
           updateItem(item.uid, { status: "error", errorMsg: insertData.msg || "入库失败" });
+          resolve(false);
         }
       } catch (err: any) {
         updateItem(item.uid, { status: "error", errorMsg: err?.message || "未知错误" });
+        resolve(false);
       }
-      resolve();
     });
 
   const handleUploadAll = async () => {
@@ -205,15 +207,17 @@ export default function UploadMedia({
     // if (!adminId) return message.error("缺少 adminId 配置");
 
     setUploading(true);
-    // 并发上传，每批最多 3 个
+    const results: boolean[] = [];
     for (let i = 0; i < pending.length; i += 3) {
-      await Promise.all(pending.slice(i, i + 3).map(processFile));
+      const batch = await Promise.all(pending.slice(i, i + 3).map(processFile));
+      results.push(...batch);
     }
     setUploading(false);
 
-    const doneCount = fileList.filter((f) => f.status === "done" || f.status === "duplicate").length;
+    const doneCount = results.filter(Boolean).length;
     if (doneCount > 0) {
       message.success(`${doneCount} 个文件处理成功`);
+      setFileList([]);
       onSuccess();
     }
   };
