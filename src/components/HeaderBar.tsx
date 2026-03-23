@@ -1,7 +1,7 @@
 // HeaderBar.tsx
 import React from "react";
 import { Select, Input, Button } from "antd";
-import { SettingOutlined, CloseOutlined } from "@ant-design/icons";
+import { SettingOutlined, CloseOutlined, UploadOutlined } from "@ant-design/icons";
 import styles from "../index.module.css";
 
 export default function HeaderBar({
@@ -13,6 +13,7 @@ export default function HeaderBar({
   onKeywordChange,
   onSettingsClick,
   onClearSelected,
+  onUploadClick,
 }: any) {
   return (
     <div
@@ -36,6 +37,10 @@ export default function HeaderBar({
       <SettingOutlined
         style={{ fontSize: 16, cursor: "pointer",position:'absolute',top:'6px',right:'6px' }}
         onClick={onSettingsClick}
+      />
+      <UploadOutlined
+        style={{ fontSize: 16, cursor: "pointer", position: 'absolute', top: '6px', right: '30px' }}
+        onClick={onUploadClick}
       />
 
       {selectedCount > 0 && (

@@ -6,6 +6,7 @@ import HeaderBar from "./components/HeaderBar";
 import MediaGrid from "./components/MediaGrid";
 import PreviewModal from "./components/PreviewModal";
 import SettingsDrawer from "./components/SettingsDrawer";
+import UploadMedia from "./components/UploadMedia";
 
 interface FieldOption {
   label: string;
@@ -22,11 +23,21 @@ interface PreviewContent {
   url: string;
   name: string;
 }
+function getCookie(name: string): string | null {
+  const cookies = document.cookie.split('; ');
+  for (let item of cookies) {
+    const [key, value] = item.split('=');
+    if (key === name) {
+      return decodeURIComponent(value);
+    }
+  }
+  return null;
+}
+
+// 使用
 
 function LoadApp() {
-  const cookies = document.cookie;
-  console.log(cookies,'cookies');
-  console.log(localStorage,'localStorage');
+  const inmadUserInfo = getCookie('inmad_user_info') || '3707608729202603238406017186';
   const [info, setInfo] = useState<string>("正在获取表格信息，请稍候...");
   const [fieldMetaList, setFieldMetaList] = useState<any[]>([]);
   const [fieldValues, setFieldValues] = useState<FieldOption[]>([]);
@@ -48,6 +59,7 @@ function LoadApp() {
   const [previewVisible, setPreviewVisible] = useState<boolean>(false);
   const [previewContent, setPreviewContent] = useState<PreviewContent | null>(null);
   const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
+  const [uploadVisible, setUploadVisible] = useState<boolean>(false);
   const [tempRecordId, setTempRecordId] = useState<string | undefined>();
   const [tempTargetFieldId, setTempTargetFieldId] = useState<string | undefined>();
   const [operationMode, setOperationMode] = useState<"add" | "overwrite" | "fillEmpty">("add");
@@ -132,21 +144,27 @@ function LoadApp() {
     pageNum: number = page,
     pageSizeNum: number = pageSize,
     accountValue: string = selectedValue!,
-    fieldId: string = selectFieldId!,
-    keywordValue: string = keyword
+    fieldId: string = selectFieldId!
   ) => {
     if (!accountValue || !fieldId) return;
     try {
-      const url = `https://new.inmad.cn/feishu_interface/feishu_media.php?customerId=${accountValue}&page=${pageNum}&pageSize=${pageSizeNum}&name=${encodeURIComponent(keywordValue)}`;
-      const res = await fetch(url);
+      const url = `https://bf.show/controller/disk/get_media_files.php`;
+      const res = await fetch(url, {
+        method: "POST",
+        body: new URLSearchParams({
+          current: String(pageNum),
+          rowCount: String(pageSizeNum),
+          ssid: inmadUserInfo,
+        }),
+      });
       const data = await res.json();
-      if (data.code !== 200 || !data.data?.list?.length) {
+      if (!data.rows?.length) {
         setApiDataList([]);
         setTotal(0);
         return;
       }
-      setApiDataList(data.data.list);
-      setTotal(data.data.total);
+      setApiDataList(data.rows);
+      setTotal(data.total);
       setPage(pageNum);
     } catch (err) {
       message.error("接口调用失败");
@@ -274,7 +292,7 @@ function LoadApp() {
   /** 关键字防抖搜索 **/
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (selectedValue) handleCallAPI(1, pageSize, selectedValue, selectFieldId!, keyword);
+      if (selectedValue) handleCallAPI(1, pageSize, selectedValue, selectFieldId!);
     }, 300);
     return () => clearTimeout(timer);
   }, [keyword]);
@@ -321,6 +339,7 @@ function LoadApp() {
         onKeywordChange={(v: string) => setKeyword(v)}
         onSettingsClick={handleOpenSettings}
         onClearSelected={() => setSelectedIds(new Set())}
+        onUploadClick={() => setUploadVisible(true)}
       />
 
       <MediaGrid
@@ -362,6 +381,15 @@ function LoadApp() {
       )}
 
       <PreviewModal visible={previewVisible} content={previewContent} onClose={() => setPreviewVisible(false)} />
+      <UploadMedia
+        visible={uploadVisible}
+        ssid={inmadUserInfo || ""}
+        onClose={() => setUploadVisible(false)}
+        onSuccess={() => {
+          setUploadVisible(false);
+          handleCallAPI(1, pageSize, selectedValue!, selectFieldId!);
+        }}
+      />
       <SettingsDrawer
         visible={settingsVisible}
         recordList={recordList}
