@@ -79,6 +79,9 @@ function LoadApp() {
   useEffect(() => {
     const init = async () => {
       try {
+        const userId = await bitable.bridge.getUserId();
+        console.log("当前用户ID:", userId);
+
         const table = await bitable.base.getActiveTable();
         const fields = await table.getFieldMetaList();
         setFieldMetaList(fields);
