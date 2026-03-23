@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { bitable, FieldType, IRecordValue, ITextField } from "@lark-base-open/js-sdk";
-import { Button, Pagination, message } from "antd";
+import { Button, Pagination, message, Modal } from "antd";
 import styles from "./index.module.css";
 import HeaderBar from "./components/HeaderBar";
 import MediaGrid from "./components/MediaGrid";
@@ -37,7 +37,9 @@ function getCookie(name: string): string | null {
 // 使用
 
 function LoadApp() {
-  const inmadUserInfo = getCookie('inmad_user_info') || '3707608729202603238406017186';
+  const [inmadUserInfo, setInmadUserInfo] = useState<string>(() => getCookie('inmad_user_info') || '');
+  const [loginModalVisible, setLoginModalVisible] = useState<boolean>(false);
+  const [loginChecking, setLoginChecking] = useState<boolean>(false);
   const [info, setInfo] = useState<string>("正在获取表格信息，请稍候...");
   const [fieldMetaList, setFieldMetaList] = useState<any[]>([]);
   const [fieldValues, setFieldValues] = useState<FieldOption[]>([]);
@@ -63,6 +65,40 @@ function LoadApp() {
   const [tempRecordId, setTempRecordId] = useState<string | undefined>();
   const [tempTargetFieldId, setTempTargetFieldId] = useState<string | undefined>();
   const [operationMode, setOperationMode] = useState<"add" | "overwrite" | "fillEmpty">("add");
+
+  const checkIsLogin = async (ssid: string): Promise<boolean> => {
+    if (!ssid) return false;
+    try {
+      const res = await fetch(`https://bf.show/inc/is_login.php?ssid=${encodeURIComponent(ssid)}`);
+      const data = await res.json();
+      return data.code === 200;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleCheckLogin = async () => {
+    const ssid = getCookie('inmad_user_info') || '';
+    setLoginChecking(true);
+    const loggedIn = await checkIsLogin(ssid);
+    setLoginChecking(false);
+    if (loggedIn) {
+      setInmadUserInfo(ssid);
+      setLoginModalVisible(false);
+      if (selectedValue && selectFieldId) {
+        handleCallAPI(1, pageSize, selectedValue, selectFieldId, ssid);
+      }
+    } else {
+      message.warning("还未检测到登录信息，请先前往登录");
+    }
+  };
+
+  useEffect(() => {
+    const ssid = getCookie('inmad_user_info') || '';
+    checkIsLogin(ssid).then((loggedIn) => {
+      if (!loggedIn) setLoginModalVisible(true);
+    });
+  }, []);
 
   /** 安全获取字段文本 **/
   const getCellText = (cell: any): string => {
@@ -144,9 +180,11 @@ function LoadApp() {
     pageNum: number = page,
     pageSizeNum: number = pageSize,
     accountValue: string = selectedValue!,
-    fieldId: string = selectFieldId!
+    fieldId: string = selectFieldId!,
+    ssidOverride?: string
   ) => {
-    if (!accountValue || !fieldId) return;
+    const ssid = ssidOverride ?? inmadUserInfo;
+    if (!accountValue || !fieldId || !ssid) return;
     try {
       const url = `https://bf.show/controller/disk/get_media_files.php`;
       const res = await fetch(url, {
@@ -154,7 +192,7 @@ function LoadApp() {
         body: new URLSearchParams({
           current: String(pageNum),
           rowCount: String(pageSizeNum),
-          ssid: inmadUserInfo,
+          ssid,
         }),
       });
       const data = await res.json();
@@ -401,6 +439,17 @@ function LoadApp() {
         onConfirm={handleConfirmSettings}
       />
 
+      <Modal
+        open={loginModalVisible}
+        closable={false}
+        maskClosable={false}
+        footer={null}
+        centered
+        title="需要登录"
+      >
+        <p>请先前往 <a href="https://bf.show/" target="_blank" rel="noreferrer">https://bf.show/</a> 登录，登录成功后点击下方刷新按钮。</p>
+        <Button type="primary" onClick={handleCheckLogin}>已登录，点击刷新</Button>
+      </Modal>
 
     </div>
   );
