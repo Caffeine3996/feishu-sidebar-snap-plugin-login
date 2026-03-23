@@ -24,6 +24,9 @@ interface PreviewContent {
 }
 
 function LoadApp() {
+  const cookies = document.cookie;
+  console.log(cookies,'cookies');
+  console.log(localStorage,'localStorage');
   const [info, setInfo] = useState<string>("正在获取表格信息，请稍候...");
   const [fieldMetaList, setFieldMetaList] = useState<any[]>([]);
   const [fieldValues, setFieldValues] = useState<FieldOption[]>([]);

@@ -6,7 +6,7 @@
   width: 100%;
   height: 100% !important;
 
-  .ant-checkbox {
+  :global(.ant-checkbox) {
     position: absolute;
     top: 6px;
     left: 6px;
