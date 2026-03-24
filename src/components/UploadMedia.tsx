@@ -313,7 +313,7 @@ export default function UploadMedia({
         value={selectedCustomers}
         onChange={setSelectedCustomers}
         options={customerList.map((c) => ({
-          label: c.customer_name,
+          label: `${c.customer_name}(${c.customer_id})`,
           value: c.customer_id,
         }))}
         allowClear
