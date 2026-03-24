@@ -18,89 +18,111 @@
   flex-direction: column;
   height: 100vh;
   box-sizing: border-box;
-  padding: 20px;
+  padding: 12px;
+  background: #f0f2f5;
 }
 
 .selectWrapper {
-  margin-bottom: 25px;
   display: flex;
-  gap: 20px;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
-  position: relative;
+  background: #fff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  margin-bottom: 10px;
+  flex-shrink: 0;
 }
 
 .scrollArea {
   flex: 1;
   overflow-y: auto;
+  padding-bottom: 4px;
 }
 
 .gridContainer {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
 }
 
 .card {
-  border: 1px solid #e8e8e8;
+  border: 2px solid transparent;
   border-radius: 8px;
-
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
   background-color: #fff;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+}
+
+.cardSelected {
+  border-color: #1677ff;
 }
 
 .img {
   width: 100%;
-  height: 120px;
+  height: 110px;
   object-fit: cover;
-  border-radius: 4px;
-
 }
 
-
 .playIcon {
-  font-size: 24px;
-  color: #f6efef;
+  font-size: 26px;
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
   position: absolute;
-  top: 50%;
+  top: 55px;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 3;
-  
+  opacity: 0;
+  transition: opacity 0.2s;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
 }
 
+.card:hover .playIcon {
+  opacity: 1;
+}
 
 .nameInfo {
   position: absolute;
   bottom: 0;
-  height: 30px;
+  height: 28px;
   left: 0;
   right: 0;
-  background-color: rgba(0, 0, 0, .5);
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.62));
   z-index: 3;
 }
 
 .name {
-  padding: 5px 10px 8px;
-  font-size: 12px;
+  padding: 5px 8px;
+  font-size: 11px;
   color: #fff;
   white-space: nowrap;
-  /* 强制单行显示，不换行 */
   overflow: hidden;
-  /* 超出的内容隐藏 */
   text-overflow: ellipsis;
-  /* 超出部分显示省略号 */
 }
 
 .footer {
   display: flex;
-  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-top: 10px;
   flex-shrink: 0;
+  padding: 10px 12px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.06);
 }
 
 :global(.ant-checkbox) {

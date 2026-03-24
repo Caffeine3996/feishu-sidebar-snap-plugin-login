@@ -9,7 +9,7 @@ export default function MediaGrid({ dataList, selectedIds, onToggleSelect, onPre
     <div className={styles.scrollArea}>
       <div className={styles.gridContainer}>
         {dataList.map((item: any) => (
-          <div key={item.back_key_id} className={styles.card}>
+          <div key={item.back_key_id} className={`${styles.card} ${selectedIds.has(item.f_name) ? styles.cardSelected : ""}`}>
             <Checkbox
               className={styles.checkbox}
               checked={selectedIds.has(item.f_name)}
