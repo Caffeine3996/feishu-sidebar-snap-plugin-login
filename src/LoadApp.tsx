@@ -7,7 +7,7 @@ import MediaGrid from "./components/MediaGrid";
 import PreviewModal from "./components/PreviewModal";
 import SettingsDrawer from "./components/SettingsDrawer";
 import UploadMedia from "./components/UploadMedia";
-import { useLoginCheck } from "./hooks/useLoginCheck";
+import { useLoginCheck, UserInfo } from "./hooks/useLoginCheck";
 
 interface FieldOption {
   label: string;
@@ -53,13 +53,20 @@ function LoadApp() {
   const [operationMode, setOperationMode] = useState<"add" | "overwrite" | "fillEmpty">("add");
 
   // 登录 hook：登录成功后刷新列表
-  const { ssid, modalVisible: loginModalVisible, checking: loginChecking, refresh: handleCheckLogin } = useLoginCheck({
+  const { ssid, userInfo, modalVisible: loginModalVisible, checking: loginChecking, refresh: handleCheckLogin } = useLoginCheck({
     onLoggedIn: (newSsid) => {
       if (selectedValue && selectFieldId) {
         handleCallAPI(1, pageSize, selectedValue, selectFieldId, newSsid);
       }
     },
   });
+
+  // userInfo 就绪后获取客户素材列表
+  useEffect(() => {
+    if (userInfo?.agency_ids) {
+      fetchCustomerMedia(1, pageSize, keyword);
+    }
+  }, [userInfo]);
 
   /** 安全获取字段文本 **/
   const getCellText = (cell: any): string => {
@@ -164,6 +171,40 @@ function LoadApp() {
       setPage(pageNum);
     } catch (err) {
       message.error("接口调用失败");
+    }
+  };
+
+  /** 获取客户素材列表 **/
+  const fetchCustomerMedia = async (
+    pageNum: number = page,
+    pageSizeNum: number = pageSize,
+    searchKeyword: string = keyword
+  ) => {
+    const agencyId = userInfo?.agency_ids;
+    if (!agencyId) return;
+    try {
+      const params = new URLSearchParams({
+        type: "customer",
+        agency_id: agencyId,
+        f_platform: "Snapchat",
+        search: searchKeyword,
+        current: String(pageNum),
+        rowCount: String(pageSizeNum),
+      });
+      const res = await fetch(
+        `https://bf.show/controller/disk/manage_media_file.php?${params}`
+      );
+      const data = await res.json();
+      if (!data.rows?.length) {
+        setApiDataList([]);
+        setTotal(0);
+        return;
+      }
+      setApiDataList(data.rows);
+      setTotal(data.total);
+      setPage(pageNum);
+    } catch (err) {
+      message.error("获取素材列表失败");
     }
   };
 
