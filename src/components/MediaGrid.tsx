@@ -9,17 +9,17 @@ export default function MediaGrid({ dataList, selectedIds, onToggleSelect, onPre
     <div className={styles.scrollArea}>
       <div className={styles.gridContainer}>
         {dataList.map((item: any) => (
-          <div key={item.back_key_id} className={`${styles.card} ${selectedIds.has(item.f_name) ? styles.cardSelected : ""}`}>
+          <div key={item.media_id} className={`${styles.card} ${selectedIds.has(item.file_name) ? styles.cardSelected : ""}`}>
             <Checkbox
               className={styles.checkbox}
-              checked={selectedIds.has(item.f_name)}
-              onChange={(e) => onToggleSelect(item.f_name, e.target.checked)}
+              checked={selectedIds.has(item.file_name)}
+              onChange={(e) => onToggleSelect(item.file_name, e.target.checked)}
             />
-            <img src={item.f_thumbnail} alt={item.f_name} className={styles.img} />
+            <img src={item.f_path} alt={item.file_name} className={styles.img} />
             <PlayCircleOutlined className={styles.playIcon} onClick={() => onPreview(item)} />
             <div className={styles.nameInfo}>
-              <Tooltip title={item.f_name}>
-                <div className={styles.name}>{item.f_name}</div>
+              <Tooltip title={item.file_name}>
+                <div className={styles.name}>{item.file_name}</div>
               </Tooltip>
             </div>
           </div>

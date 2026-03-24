@@ -164,6 +164,38 @@ function LoadApp() {
     const currentSsid = ssidOverride ?? ssid;
     if (!accountValue || !fieldId || !currentSsid) return;
     try {
+      const res = await fetch(`https://new.inmad.cn/feishu_interface/feishu_snapchat_media.php?`, {
+        method: "POST",
+        body: new URLSearchParams({
+          page: String(pageNum),
+          pageSize: String(pageSizeNum),
+          customerId:accountValue
+        }),
+      });
+      const data = await res.json();
+      if (!data.data?.list?.length) {
+        setApiDataList([]);
+        setTotal(0);
+        return;
+      }
+
+      setApiDataList(data.data.list);
+      setTotal(Number(data.data.total));
+      setPage(pageNum);
+    } catch (err) {
+      message.error("接口调用失败");
+    }
+  };
+  const handleCallAPIAll = async (
+    pageNum: number = page,
+    pageSizeNum: number = pageSize,
+    accountValue: string = selectedValue!,
+    fieldId: string = selectFieldId!,
+    ssidOverride?: string
+  ) => {
+    const currentSsid = ssidOverride ?? ssid;
+    if (!accountValue || !fieldId || !currentSsid) return;
+    try {
       const res = await fetch(`https://bf.show/controller/disk/get_media_files.php`, {
         method: "POST",
         body: new URLSearchParams({
@@ -186,6 +218,7 @@ function LoadApp() {
       message.error("接口调用失败");
     }
   };
+
 
   /** 获取客户素材列表 **/
   const fetchCustomerMedia = async (searchKeyword: string = keyword) => {
@@ -354,16 +387,16 @@ function LoadApp() {
       <MediaGrid
         dataList={apiDataList}
         selectedIds={selectedIds}
-        onToggleSelect={(name: string, checked: boolean) =>
+        onToggleSelect={(file_name: string, checked: boolean) =>
           setSelectedIds((prev) => {
             const s = new Set(prev);
-            checked ? s.add(name) : s.delete(name);
+            checked ? s.add(file_name) : s.delete(file_name);
             return s;
           })
         }
-        onPreview={(item: { f_name: string; f_path: string }) => {
-          const isVideo = item.f_name?.endsWith(".mp4");
-          setPreviewContent({ type: isVideo ? "video" : "image", url: item.f_path, name: item.f_name });
+        onPreview={(item: { file_name: string; f_path: string }) => {
+          const isVideo = item.file_name?.endsWith(".mp4");
+          setPreviewContent({ type: isVideo ? "video" : "image", url: item.f_path, name: item.file_name });
           setPreviewVisible(true);
         }}
       />
