@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Upload, Button, message, Progress, Tag, Select } from "antd";
 import {
   InboxOutlined,
@@ -6,6 +6,8 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   LoadingOutlined,
+  PictureOutlined,
+  PlayCircleOutlined,
 } from "@ant-design/icons";
 import SparkMD5 from "spark-md5";
 
@@ -95,6 +97,12 @@ export default function UploadMedia({
   const [fileList, setFileList] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (selectedCustomers.length === 0 && fallbackCustomerId && customerList.some((c) => c.customer_id === fallbackCustomerId)) {
+      setSelectedCustomers([fallbackCustomerId]);
+    }
+  }, [customerList, fallbackCustomerId]);
 
   const effectiveCustomers = selectedCustomers.length > 0
     ? selectedCustomers
@@ -309,7 +317,7 @@ export default function UploadMedia({
       <Select
         mode="multiple"
         style={{ width: "100%", marginBottom: 16 }}
-        placeholder="选择关联客户（可多选）"
+        placeholder="选择广告账户（可多选）"
         value={selectedCustomers}
         onChange={setSelectedCustomers}
         options={customerList.map((c) => ({
@@ -366,13 +374,24 @@ export default function UploadMedia({
                   }}
                 >
                   {item.previewUrl ? (
-                    <img
-                      src={item.previewUrl}
-                      alt=""
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
+                    <>
+                      <img
+                        src={item.previewUrl}
+                        alt=""
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                          (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.removeProperty("display");
+                        }}
+                      />
+                      <span style={{ display: "none", fontSize: 22, color: "#bfbfbf" }}>
+                        <PictureOutlined />
+                      </span>
+                    </>
                   ) : (
-                    <span>{isVideo ? "视频" : "文件"}</span>
+                    <span style={{ fontSize: 22, color: "#bfbfbf" }}>
+                      {isVideo ? <PlayCircleOutlined /> : <PictureOutlined />}
+                    </span>
                   )}
                 </div>
 

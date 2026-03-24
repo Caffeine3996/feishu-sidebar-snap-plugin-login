@@ -41,6 +41,45 @@
   padding-bottom: 4px;
 }
 
+.tabsWrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabsWrapper :global(.ant-tabs) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tabsWrapper :global(.ant-tabs-content-holder) {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tabsWrapper :global(.ant-tabs-content),
+.tabsWrapper :global(.ant-tabs-tabpane) {
+  height: 100%;
+}
+
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tabScrollArea {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
 .gridContainer {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -73,6 +112,31 @@
   width: 100%;
   height: 110px;
   object-fit: cover;
+}
+
+.imgFallback {
+  width: 100%;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  font-size: 28px;
+  color: #bfbfbf;
+}
+
+.videoPlaceholder {
+  width: 100%;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a2e;
+}
+
+.videoPlaceholderIcon {
+  font-size: 36px;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .playIcon {

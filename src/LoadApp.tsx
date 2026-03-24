@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { bitable, FieldType, IRecordValue, ITextField } from "@lark-base-open/js-sdk";
-import { Button, Pagination, message, Modal } from "antd";
+import { Button, Pagination, message, Modal, Tabs } from "antd";
 import styles from "./index.module.css";
 import HeaderBar from "./components/HeaderBar";
 import MediaGrid from "./components/MediaGrid";
+import AllMediaGrid from "./components/AllMediaGrid";
 import PreviewModal from "./components/PreviewModal";
 import SettingsDrawer from "./components/SettingsDrawer";
 import UploadMedia from "./components/UploadMedia";
@@ -47,12 +48,20 @@ function LoadApp() {
   const [targetFieldId, setTargetFieldId] = useState<string>();
   const [selectedRecordId, setSelectedRecordId] = useState<string>();
 
+  const [activeTab, setActiveTab] = useState<"snap" | "all">("snap");
+
   const [apiDataList, setApiDataList] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
+
+  const [apiDataListAll, setApiDataListAll] = useState<any[]>([]);
+
+  const [pageAll, setPageAll] = useState<number>(1);
+  const [pageSizeAll, setPageSizeAll] = useState<number>(10);
+  const [totalAll, setTotalAll] = useState<number>(0);
   const [keyword, setKeyword] = useState<string>("");
 
   const [previewVisible, setPreviewVisible] = useState<boolean>(false);
@@ -159,7 +168,8 @@ function LoadApp() {
     pageSizeNum: number = pageSize,
     accountValue: string = selectedValue!,
     fieldId: string = selectFieldId!,
-    ssidOverride?: string
+    ssidOverride?: string,
+    keywordParam: string = keyword
   ) => {
     const currentSsid = ssidOverride ?? ssid;
     if (!accountValue || !fieldId || !currentSsid) return;
@@ -169,7 +179,8 @@ function LoadApp() {
         body: new URLSearchParams({
           page: String(pageNum),
           pageSize: String(pageSizeNum),
-          customerId:accountValue
+          customerId: accountValue,
+          ...(keywordParam ? { fileName: keywordParam } : {}),
         }),
       });
       const data = await res.json();
@@ -206,14 +217,14 @@ function LoadApp() {
       });
       const data = await res.json();
       if (!data.rows?.length) {
-        setApiDataList([]);
-        setTotal(0);
+        setApiDataListAll([]);
+        setTotalAll(0);
         return;
       }
 
-      setApiDataList(data.rows);
-      setTotal(data.total);
-      setPage(pageNum);
+      setApiDataListAll(data.rows);
+      setTotalAll(data.total);
+      setPageAll(pageNum);
     } catch (err) {
       message.error("接口调用失败");
     }
@@ -384,43 +395,94 @@ function LoadApp() {
         onUploadClick={() => setUploadVisible(true)}
       />
 
-      <MediaGrid
-        dataList={apiDataList}
-        selectedIds={selectedIds}
-        onToggleSelect={(file_name: string, checked: boolean) =>
-          setSelectedIds((prev) => {
-            const s = new Set(prev);
-            checked ? s.add(file_name) : s.delete(file_name);
-            return s;
-          })
-        }
-        onPreview={(item: { file_name: string; f_path: string }) => {
-          const isVideo = item.file_name?.endsWith(".mp4");
-          setPreviewContent({ type: isVideo ? "video" : "image", url: item.f_path, name: item.file_name });
-          setPreviewVisible(true);
+      <div className={styles.tabsWrapper}>
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => {
+          setActiveTab(key as "snap" | "all");
+          if (key === "all" && apiDataListAll.length === 0) {
+            handleCallAPIAll(1, pageSizeAll);
+          }
         }}
+        items={[
+          {
+            key: "snap",
+            label: "媒体素材",
+            children: (
+              <div className={styles.tabContent}>
+                <div className={styles.tabScrollArea}>
+                  <MediaGrid
+                    dataList={apiDataList}
+                    selectedIds={selectedIds}
+                    onToggleSelect={(file_name: string, checked: boolean) =>
+                      setSelectedIds((prev) => {
+                        const s = new Set(prev);
+                        checked ? s.add(file_name) : s.delete(file_name);
+                        return s;
+                      })
+                    }
+                    onPreview={(item: { file_name: string; f_path: string }) => {
+                      const isVideo = /\.(mp4|mov|avi|mpeg|mpg|wmv|webm)(\?|$)/i.test(item.f_path ?? item.file_name ?? "");
+                      setPreviewContent({ type: isVideo ? "video" : "image", url: item.f_path, name: item.file_name });
+                      setPreviewVisible(true);
+                    }}
+                  />
+                </div>
+                {apiDataList.length > 0 && (
+                  <div className={styles.footer}>
+                    <Pagination
+                      current={page}
+                      pageSize={pageSize}
+                      total={total}
+                      showSizeChanger
+                      onChange={(p, size) => handleCallAPI(p, size)}
+                    />
+                    <Button
+                      type="primary"
+                      onClick={() => {
+                        if (selectedIds.size === 0) return message.warning("请选择素材");
+                        writeToTable(Array.from(selectedIds).map((name) => ({ f_name: name })));
+                      }}
+                    >
+                      写入选中数据到表格
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ),
+          },
+          {
+            key: "all",
+            label: "亿帆素材",
+            children: (
+              <div className={styles.tabContent}>
+                <div className={styles.tabScrollArea}>
+                  <AllMediaGrid
+                    dataList={apiDataListAll}
+                    onPreview={(item: { file_name: string; f_path: string }) => {
+                      const isVideo = /\.(mp4|mov|avi|mpeg|mpg|wmv|webm)(\?|$)/i.test(item.f_path ?? item.file_name ?? "");
+                      setPreviewContent({ type: isVideo ? "video" : "image", url: item.f_path, name: item.file_name });
+                      setPreviewVisible(true);
+                    }}
+                  />
+                </div>
+                {apiDataListAll.length > 0 && (
+                  <div className={styles.footer}>
+                    <Pagination
+                      current={pageAll}
+                      pageSize={pageSizeAll}
+                      total={totalAll}
+                      showSizeChanger
+                      onChange={(p, size) => handleCallAPIAll(p, size)}
+                    />
+                  </div>
+                )}
+              </div>
+            ),
+          },
+        ]}
       />
-
-      {apiDataList.length > 0 && (
-        <div className={styles.footer}>
-          <Pagination
-            current={page}
-            pageSize={pageSize}
-            total={total}
-            showSizeChanger
-            onChange={(p, size) => handleCallAPI(p, size)}
-          />
-          <Button
-            type="primary"
-            onClick={() => {
-              if (selectedIds.size === 0) return message.warning("请选择素材");
-              writeToTable(Array.from(selectedIds).map((name) => ({ f_name: name })));
-            }}
-          >
-            写入选中数据到表格
-          </Button>
-        </div>
-      )}
+      </div>
 
       <PreviewModal visible={previewVisible} content={previewContent} onClose={() => setPreviewVisible(false)} />
       <UploadMedia
