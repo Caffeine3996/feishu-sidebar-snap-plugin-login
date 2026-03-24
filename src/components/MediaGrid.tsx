@@ -15,13 +15,13 @@ export default function MediaGrid({ dataList, selectedIds, onToggleSelect, onPre
     <div className={styles.scrollArea}>
       <div className={styles.gridContainer}>
         {dataList.map((item: any) => {
-          const isVideo = isVideoPath(item.f_path) || isVideoPath(item.file_name);
+          const isVideo = isVideoPath(item.f_path) || isVideoPath(item.name);
           return (
-            <div key={item.media_id} className={`${styles.card} ${selectedIds.has(item.file_name) ? styles.cardSelected : ""}`}>
+            <div key={item.media_id} className={`${styles.card} ${selectedIds.has(item.name) ? styles.cardSelected : ""}`}>
               <Checkbox
                 className={styles.checkbox}
-                checked={selectedIds.has(item.file_name)}
-                onChange={(e) => onToggleSelect(item.file_name, e.target.checked)}
+                checked={selectedIds.has(item.name)}
+                onChange={(e) => onToggleSelect(item.name, e.target.checked)}
               />
               {isVideo ? (
                 <>

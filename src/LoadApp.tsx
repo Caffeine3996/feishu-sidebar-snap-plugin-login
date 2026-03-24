@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { bitable, FieldType, IRecordValue, ITextField } from "@lark-base-open/js-sdk";
 import { Button, Pagination, message, Modal, Tabs } from "antd";
+import { ReloadOutlined } from "@ant-design/icons";
 import styles from "./index.module.css";
 import HeaderBar from "./components/HeaderBar";
 import MediaGrid from "./components/MediaGrid";
@@ -406,6 +407,18 @@ function LoadApp() {
             handleCallAPIAll(1, pageSizeAll);
           }
         }}
+        tabBarExtraContent={
+          <ReloadOutlined
+            style={{ cursor: "pointer", color: "#595959", marginRight: 8 }}
+            onClick={() => {
+              if (activeTab === "snap") {
+                handleCallAPI(1, pageSize, selectedValue!, selectFieldId!);
+              } else {
+                handleCallAPIAll(1, pageSizeAll);
+              }
+            }}
+          />
+        }
         items={[
           {
             key: "snap",
@@ -416,16 +429,16 @@ function LoadApp() {
                   <MediaGrid
                     dataList={apiDataList}
                     selectedIds={selectedIds}
-                    onToggleSelect={(file_name: string, checked: boolean) =>
+                    onToggleSelect={(name: string, checked: boolean) =>
                       setSelectedIds((prev) => {
                         const s = new Set(prev);
-                        checked ? s.add(file_name) : s.delete(file_name);
+                        checked ? s.add(name) : s.delete(name);
                         return s;
                       })
                     }
-                    onPreview={(item: { file_name: string; f_path: string }) => {
-                      const isVideo = /\.(mp4|mov|avi|mpeg|mpg|wmv|webm)(\?|$)/i.test(item.f_path ?? item.file_name ?? "");
-                      setPreviewContent({ type: isVideo ? "video" : "image", url: item.f_path, name: item.file_name });
+                    onPreview={(item: { name: string; f_path: string }) => {
+                      const isVideo = /\.(mp4|mov|avi|mpeg|mpg|wmv|webm)(\?|$)/i.test(item.f_path ?? item.name ?? "");
+                      setPreviewContent({ type: isVideo ? "video" : "image", url: item.f_path, name: item.name });
                       setPreviewVisible(true);
                     }}
                   />
