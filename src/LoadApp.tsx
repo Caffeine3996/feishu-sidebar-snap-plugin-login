@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { bitable, FieldType, IRecordValue, ITextField } from "@lark-base-open/js-sdk";
 import { Button, Pagination, message, Modal } from "antd";
 import styles from "./index.module.css";
@@ -53,13 +53,13 @@ function LoadApp() {
   const [operationMode, setOperationMode] = useState<"add" | "overwrite" | "fillEmpty">("add");
 
   // 登录 hook：登录成功后刷新列表
-  const { ssid, userInfo, modalVisible: loginModalVisible, checking: loginChecking, refresh: handleCheckLogin } = useLoginCheck({
-    onLoggedIn: (newSsid) => {
-      if (selectedValue && selectFieldId) {
-        handleCallAPI(1, pageSize, selectedValue, selectFieldId, newSsid);
-      }
-    },
-  });
+  const onLoggedIn = useCallback((newSsid: string) => {
+    if (selectedValue && selectFieldId) {
+      handleCallAPI(1, pageSize, selectedValue, selectFieldId, newSsid);
+    }
+  }, [selectedValue, selectFieldId, pageSize]);
+
+  const { ssid, userInfo, modalVisible: loginModalVisible, checking: loginChecking, refresh: handleCheckLogin } = useLoginCheck({ onLoggedIn });
 
   // userInfo 就绪后获取客户素材列表
   useEffect(() => {
