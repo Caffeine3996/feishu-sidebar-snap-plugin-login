@@ -29,6 +29,7 @@ export default function HeaderBar({
         placeholder="搜索关键字"
         value={keyword}
         prefix={<SearchOutlined style={{ color: "#bbb" }} />}
+        allowClear
         onChange={(e) => onKeywordChange(e.target.value)}
       />
 

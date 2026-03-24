@@ -25,17 +25,20 @@ export default function MediaGrid({ dataList, selectedIds, onToggleSelect, onPre
               />
               {isVideo ? (
                 <>
-                  <img
-                    src={item.f_thumbnail}
-                    alt={item.file_name}
-                    className={styles.img}
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                      (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.removeProperty("display");
-                    }}
-                  />
-                  <div className={styles.imgFallback} style={{ display: "none" }}>
-                    <PlayCircleOutlined />
+                  {item.f_thumbnail && (
+                    <img
+                      src={item.f_thumbnail}
+                      alt={item.file_name}
+                      className={styles.img}
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                        if (fallback) fallback.style.display = "flex";
+                      }}
+                    />
+                  )}
+                  <div className={styles.imgFallback} style={{ display: item.f_thumbnail ? "none" : undefined }}>
+                    <PictureOutlined />
                   </div>
                 </>
               ) : (
@@ -56,8 +59,8 @@ export default function MediaGrid({ dataList, selectedIds, onToggleSelect, onPre
               )}
               <PlayCircleOutlined className={styles.playIcon} onClick={() => onPreview(item)} />
               <div className={styles.nameInfo}>
-                <Tooltip title={item.file_name}>
-                  <div className={styles.name}>{item.file_name}</div>
+                <Tooltip title={item.name}>
+                  <div className={styles.name}>{item.name}</div>
                 </Tooltip>
               </div>
             </div>

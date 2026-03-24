@@ -35,10 +35,11 @@ export default function PreviewModal({ visible, content, onClose }: any) {
               style={{ width: "100%", height: 400, objectFit: "contain" }}
               onError={(e) => {
                 e.currentTarget.style.display = "none";
-                (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.removeProperty("display");
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                if (fallback) fallback.style.display = "flex";
               }}
             />
-            <div style={{ display: "none", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", fontSize: 48, color: "#ccc" }}>
+            <div style={{ display: "none", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", fontSize: 64, color: "#ccc", position: "absolute", top: 0, left: 0 }}>
               <PictureOutlined />
             </div>
           </div>

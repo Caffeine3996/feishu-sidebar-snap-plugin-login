@@ -180,7 +180,7 @@ function LoadApp() {
           page: String(pageNum),
           pageSize: String(pageSizeNum),
           customerId: accountValue,
-          ...(keywordParam ? { fileName: keywordParam } : {}),
+          ...(keywordParam ? { name: keywordParam } : {}),
         }),
       });
       const data = await res.json();
@@ -461,9 +461,9 @@ function LoadApp() {
                 <div className={styles.tabScrollArea}>
                   <AllMediaGrid
                     dataList={apiDataListAll}
-                    onPreview={(item: { file_name: string; f_path: string }) => {
-                      const isVideo = /\.(mp4|mov|avi|mpeg|mpg|wmv|webm)(\?|$)/i.test(item.f_path ?? item.file_name ?? "");
-                      setPreviewContent({ type: isVideo ? "video" : "image", url: item.f_path, name: item.file_name });
+                    onPreview={(item: { f_name: string; f_path: string }) => {
+                      const isVideo = /\.(mp4|mov|avi|mpeg|mpg|wmv|webm)(\?|$)/i.test(item.f_path ?? item.f_name ?? "");
+                      setPreviewContent({ type: isVideo ? "video" : "image", url: item.f_path, name: item.f_name });
                       setPreviewVisible(true);
                     }}
                   />
