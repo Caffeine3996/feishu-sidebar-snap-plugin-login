@@ -7,6 +7,7 @@ import MediaGrid from "./components/MediaGrid";
 import PreviewModal from "./components/PreviewModal";
 import SettingsDrawer from "./components/SettingsDrawer";
 import UploadMedia from "./components/UploadMedia";
+import { useLoginCheck } from "./hooks/useLoginCheck";
 
 interface FieldOption {
   label: string;
@@ -23,23 +24,8 @@ interface PreviewContent {
   url: string;
   name: string;
 }
-function getCookie(name: string): string | null {
-  const cookies = document.cookie.split('; ');
-  for (let item of cookies) {
-    const [key, value] = item.split('=');
-    if (key === name) {
-      return decodeURIComponent(value);
-    }
-  }
-  return null;
-}
-
-// 使用
 
 function LoadApp() {
-  const [inmadUserInfo, setInmadUserInfo] = useState<string>(() => getCookie('inmad_user_info') || '');
-  const [loginModalVisible, setLoginModalVisible] = useState<boolean>(false);
-  const [loginChecking, setLoginChecking] = useState<boolean>(false);
   const [info, setInfo] = useState<string>("正在获取表格信息，请稍候...");
   const [fieldMetaList, setFieldMetaList] = useState<any[]>([]);
   const [fieldValues, setFieldValues] = useState<FieldOption[]>([]);
@@ -66,39 +52,14 @@ function LoadApp() {
   const [tempTargetFieldId, setTempTargetFieldId] = useState<string | undefined>();
   const [operationMode, setOperationMode] = useState<"add" | "overwrite" | "fillEmpty">("add");
 
-  const checkIsLogin = async (ssid: string): Promise<boolean> => {
-    if (!ssid) return false;
-    try {
-      const res = await fetch(`https://bf.show/inc/is_login.php?ssid=${encodeURIComponent(ssid)}`);
-      const data = await res.json();
-      return data.code === 200;
-    } catch {
-      return false;
-    }
-  };
-
-  const handleCheckLogin = async () => {
-    const ssid = getCookie('inmad_user_info') || '';
-    setLoginChecking(true);
-    const loggedIn = await checkIsLogin(ssid);
-    setLoginChecking(false);
-    if (loggedIn) {
-      setInmadUserInfo(ssid);
-      setLoginModalVisible(false);
+  // 登录 hook：登录成功后刷新列表
+  const { ssid, modalVisible: loginModalVisible, checking: loginChecking, refresh: handleCheckLogin } = useLoginCheck({
+    onLoggedIn: (newSsid) => {
       if (selectedValue && selectFieldId) {
-        handleCallAPI(1, pageSize, selectedValue, selectFieldId, ssid);
+        handleCallAPI(1, pageSize, selectedValue, selectFieldId, newSsid);
       }
-    } else {
-      message.warning("还未检测到登录信息，请先前往登录");
-    }
-  };
-
-  useEffect(() => {
-    const ssid = getCookie('inmad_user_info') || '';
-    checkIsLogin(ssid).then((loggedIn) => {
-      if (!loggedIn) setLoginModalVisible(true);
-    });
-  }, []);
+    },
+  });
 
   /** 安全获取字段文本 **/
   const getCellText = (cell: any): string => {
@@ -111,7 +72,8 @@ function LoadApp() {
     }
     return String(cell ?? "");
   };
-  /** ✅ 1️⃣ 初始化时读取本地存储配置 **/
+
+  /** 初始化时读取本地存储配置 **/
   useEffect(() => {
     const savedConfig = localStorage.getItem("mediaWriterConfig");
     if (savedConfig) {
@@ -130,9 +92,7 @@ function LoadApp() {
   useEffect(() => {
     const init = async () => {
       try {
-        const userId = await bitable.bridge.getUserId();
-        console.log("当前用户ID:", userId);
-
+        await bitable.bridge.getUserId();
         const table = await bitable.base.getActiveTable();
         const fields = await table.getFieldMetaList();
         setFieldMetaList(fields);
@@ -153,7 +113,6 @@ function LoadApp() {
         const options = Array.from(new Set(values)).sort().map((v) => ({ label: v, value: v }));
         setFieldValues(options);
 
-        // 记录列表
         const recordOptions: RecordOption[] = [];
         for (const id of recordIds) {
           const record = await table.getRecordById(id);
@@ -183,16 +142,15 @@ function LoadApp() {
     fieldId: string = selectFieldId!,
     ssidOverride?: string
   ) => {
-    const ssid = ssidOverride ?? inmadUserInfo;
-    if (!accountValue || !fieldId || !ssid) return;
+    const currentSsid = ssidOverride ?? ssid;
+    if (!accountValue || !fieldId || !currentSsid) return;
     try {
-      const url = `https://bf.show/controller/disk/get_media_files.php`;
-      const res = await fetch(url, {
+      const res = await fetch(`https://bf.show/controller/disk/get_media_files.php`, {
         method: "POST",
         body: new URLSearchParams({
           current: String(pageNum),
           rowCount: String(pageSizeNum),
-          ssid,
+          ssid: currentSsid,
         }),
       });
       const data = await res.json();
@@ -213,7 +171,6 @@ function LoadApp() {
   const writeToTable = async (items: { f_name: string }[]) => {
     try {
       const table = await bitable.base.getActiveTable();
-
       switch (operationMode) {
         case "add":
           await handleAddMode(table, items);
@@ -233,18 +190,10 @@ function LoadApp() {
     }
   };
 
-  /** ========== 各模式实现 ========== **/
-
-  // Add 模式：复制源记录并新增
   const handleAddMode = async (table: any, items: { f_name: string }[]) => {
     if (!targetFieldId) return message.error("请选择写入列");
-
     const field = await table.getField(selectFieldId!);
-    const recordIds = await table.getRecordIdList();
-    if (!selectedValue) {
-      message.error("请先选择一个源值");
-      return;
-    }
+    if (!selectedValue) return message.error("请先选择一个源值");
 
     const sourceRecordId = await findSourceRecordId(table, field, selectedValue);
     if (!sourceRecordId) return message.warning("未找到源记录");
@@ -266,27 +215,21 @@ function LoadApp() {
     message.success(`已创建 ${newRecords.length} 条记录`);
   };
 
-  // Overwrite 模式：覆盖选中单元格
   const handleOverwriteMode = async (table: any) => {
     const selection = await bitable.base.getSelection();
     if (!selection?.fieldId || !selection?.recordId) {
       return message.error("请先在表格中选中一个单元格");
     }
-
     const textField = await table.getField(selection.fieldId);
     const firstSelected = Array.from(selectedIds)[0];
     if (!firstSelected) return message.warning("请选择素材");
-
     await textField.setValue(selection.recordId, firstSelected);
     message.success("已覆盖选中素材");
   };
 
-  // FillEmpty 模式：填充空白单元格
   const handleFillEmptyMode = async (table: any) => {
     const selection = await bitable.base.getSelection();
-    if (!selection?.fieldId) {
-      return message.error("请先选中一个单元格所在列");
-    }
+    if (!selection?.fieldId) return message.error("请先选中一个单元格所在列");
 
     const textField = await table.getField(selection.fieldId);
     const recordIds = await table.getRecordIdList();
@@ -295,37 +238,28 @@ function LoadApp() {
 
     let filledCount = 0;
     let index = 0;
-
     for (const recordId of recordIds) {
       const currentValue = await textField.getValue(recordId);
       const isEmpty =
         !currentValue ||
         (Array.isArray(currentValue) && (!currentValue.length || !currentValue[0]?.text));
-
       if (isEmpty) {
-        const currentMaterial = selectedArray[index % selectedArray.length];
-        await textField.setValue(recordId, currentMaterial);
+        await textField.setValue(recordId, selectedArray[index % selectedArray.length]);
         filledCount++;
         index++;
       }
     }
-
     message.success(`已依次填充 ${filledCount} 条空白记录`);
   };
 
-  // 辅助函数
-  const findSourceRecordId = async (table: any, field: ITextField, selectedValue: string) => {
+  const findSourceRecordId = async (table: any, field: ITextField, value: string) => {
     const recordIds = await table.getRecordIdList();
     for (const id of recordIds) {
       const val = await field.getValue(id);
-      if (Array.isArray(val) && val[0]?.text === selectedValue) {
-        return id;
-      }
+      if (Array.isArray(val) && val[0]?.text === value) return id;
     }
     return undefined;
   };
-
-
 
   /** 关键字防抖搜索 **/
   useEffect(() => {
@@ -334,7 +268,8 @@ function LoadApp() {
     }, 300);
     return () => clearTimeout(timer);
   }, [keyword]);
-  /** ✅ 2️⃣ 点击确定时保存本地配置 **/
+
+  /** 点击确定时保存本地配置 **/
   const handleConfirmSettings = (
     recordId: string,
     fieldId: string,
@@ -344,25 +279,15 @@ function LoadApp() {
     setTargetFieldId(fieldId);
     setOperationMode(mode);
     setSettingsVisible(false);
-
-    // 保存配置到 localStorage
-    localStorage.setItem(
-      "mediaWriterConfig",
-      JSON.stringify({
-        recordId,
-        fieldId,
-        operationMode: mode,
-      })
-    );
+    localStorage.setItem("mediaWriterConfig", JSON.stringify({ recordId, fieldId, operationMode: mode }));
   };
 
-  /** 打开设置抽屉 **/
   const handleOpenSettings = () => {
     setTempRecordId(selectedRecordId);
-
     setTempTargetFieldId(targetFieldId);
     setSettingsVisible(true);
   };
+
   return (
     <div className={styles.container}>
       <HeaderBar
@@ -421,7 +346,7 @@ function LoadApp() {
       <PreviewModal visible={previewVisible} content={previewContent} onClose={() => setPreviewVisible(false)} />
       <UploadMedia
         visible={uploadVisible}
-        ssid={inmadUserInfo || ""}
+        ssid={ssid}
         onClose={() => setUploadVisible(false)}
         onSuccess={() => {
           setUploadVisible(false);
@@ -447,10 +372,17 @@ function LoadApp() {
         centered
         title="需要登录"
       >
-        <p>请先前往 <a href="https://bf.show/" target="_blank" rel="noreferrer">https://bf.show/</a> 登录，登录成功后点击下方刷新按钮。</p>
-        <Button type="primary" onClick={handleCheckLogin}>已登录，点击刷新</Button>
+        <p>
+          请先前往{" "}
+          <a href="https://bf.show/" target="_blank" rel="noreferrer">
+            https://bf.show/
+          </a>{" "}
+          登录，登录成功后点击下方刷新按钮。
+        </p>
+        <Button type="primary" loading={loginChecking} onClick={handleCheckLogin}>
+          已登录，点击刷新
+        </Button>
       </Modal>
-
     </div>
   );
 }
