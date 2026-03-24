@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Upload, Button, message, Progress, Tag } from "antd";
+import { Modal, Upload, Button, message, Progress, Tag, Select } from "antd";
 import {
   InboxOutlined,
   DeleteOutlined,
@@ -40,10 +40,15 @@ interface FileItem {
   previewUrl?: string;
 }
 
+interface CustomerItem {
+  customer_id: string;
+  customer_name: string;
+}
+
 interface Props {
   visible: boolean;
-  /** ssid，后端必需参数 */
   ssid: string;
+  customerList: CustomerItem[];
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -81,11 +86,13 @@ function computeMd5(file: File): Promise<string> {
 export default function UploadMedia({
   visible,
   ssid,
+  customerList,
   onClose,
   onSuccess,
 }: Props) {
   const [fileList, setFileList] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
 
   const updateItem = (uid: string, patch: Partial<FileItem>) =>
     setFileList((prev) => prev.map((f) => (f.uid === uid ? { ...f, ...patch } : f)));
@@ -116,6 +123,7 @@ export default function UploadMedia({
           f_size: String(item.file.size),
           f_md5: md5,
           ssid: ssid,
+          selected_customer_ids: selectedCustomers.join(","),
         });
         const checkRes = await fetch(CHECK_URL, {
           method: "POST",
@@ -179,6 +187,7 @@ export default function UploadMedia({
         const insertBody = new URLSearchParams({
           ...safeResult,
           ssid,
+          selected_customer_ids: selectedCustomers.join(","),
         });
         const insertRes = await fetch(INSERT_URL, {
           method: "POST",
@@ -234,6 +243,7 @@ export default function UploadMedia({
     if (uploading) return;
     fileList.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
     setFileList([]);
+    setSelectedCustomers([]);
     onClose();
   };
 
@@ -288,6 +298,18 @@ export default function UploadMedia({
         </div>
       }
     >
+      <Select
+        mode="multiple"
+        style={{ width: "100%", marginBottom: 16 }}
+        placeholder="选择关联客户（可多选）"
+        value={selectedCustomers}
+        onChange={setSelectedCustomers}
+        options={customerList.map((c) => ({
+          label: c.customer_name,
+          value: c.customer_id,
+        }))}
+        allowClear
+      />
       <Dragger
         accept={ACCEPT_EXT}
         multiple

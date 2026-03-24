@@ -393,6 +393,7 @@ function LoadApp() {
       <UploadMedia
         visible={uploadVisible}
         ssid={ssid}
+        customerList={customerList}
         onClose={() => setUploadVisible(false)}
         onSuccess={() => {
           setUploadVisible(false);
