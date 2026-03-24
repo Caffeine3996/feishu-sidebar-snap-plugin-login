@@ -25,6 +25,17 @@ interface PreviewContent {
   name: string;
 }
 
+interface CustomerItem {
+  customer_id: string;
+  customer_name: string;
+}
+
+interface CustomerMediaResponse {
+  code: number;
+  msg: string;
+  results: CustomerItem[];
+}
+
 function LoadApp() {
   const [info, setInfo] = useState<string>("正在获取表格信息，请稍候...");
   const [fieldMetaList, setFieldMetaList] = useState<any[]>([]);
@@ -48,6 +59,7 @@ function LoadApp() {
   const [previewContent, setPreviewContent] = useState<PreviewContent | null>(null);
   const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
   const [uploadVisible, setUploadVisible] = useState<boolean>(false);
+  const [customerList, setCustomerList] = useState<CustomerItem[]>([]);
   const [tempRecordId, setTempRecordId] = useState<string | undefined>();
   const [tempTargetFieldId, setTempTargetFieldId] = useState<string | undefined>();
   const [operationMode, setOperationMode] = useState<"add" | "overwrite" | "fillEmpty">("add");
@@ -64,7 +76,7 @@ function LoadApp() {
   // userInfo 就绪后获取客户素材列表
   useEffect(() => {
     if (userInfo?.agency_ids) {
-      fetchCustomerMedia(1, pageSize, keyword);
+      fetchCustomerMedia('');
     }
   }, [userInfo]);
 
@@ -166,6 +178,7 @@ function LoadApp() {
         setTotal(0);
         return;
       }
+
       setApiDataList(data.rows);
       setTotal(data.total);
       setPage(pageNum);
@@ -175,11 +188,7 @@ function LoadApp() {
   };
 
   /** 获取客户素材列表 **/
-  const fetchCustomerMedia = async (
-    pageNum: number = page,
-    pageSizeNum: number = pageSize,
-    searchKeyword: string = keyword
-  ) => {
+  const fetchCustomerMedia = async (searchKeyword: string = keyword) => {
     const agencyId = userInfo?.agency_ids;
     if (!agencyId) return;
     try {
@@ -188,21 +197,17 @@ function LoadApp() {
         agency_id: agencyId,
         f_platform: "Snapchat",
         search: searchKeyword,
-        current: String(pageNum),
-        rowCount: String(pageSizeNum),
       });
       const res = await fetch(
         `https://bf.show/controller/disk/manage_media_file.php?${params}`
       );
-      const data = await res.json();
-      if (!data.rows?.length) {
-        setApiDataList([]);
-        setTotal(0);
+      const data: CustomerMediaResponse = await res.json();
+      if (!data.results?.length) {
+        setCustomerList([]);
         return;
       }
-      setApiDataList(data.rows);
-      setTotal(data.total);
-      setPage(pageNum);
+      setCustomerList(data.results);
+      console.log(data,'data')
     } catch (err) {
       message.error("获取素材列表失败");
     }
