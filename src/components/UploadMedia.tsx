@@ -49,6 +49,7 @@ interface Props {
   visible: boolean;
   ssid: string;
   customerList: CustomerItem[];
+  fallbackCustomerId?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -87,12 +88,17 @@ export default function UploadMedia({
   visible,
   ssid,
   customerList,
+  fallbackCustomerId,
   onClose,
   onSuccess,
 }: Props) {
   const [fileList, setFileList] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
+
+  const effectiveCustomers = selectedCustomers.length > 0
+    ? selectedCustomers
+    : fallbackCustomerId ? [fallbackCustomerId] : [];
 
   const updateItem = (uid: string, patch: Partial<FileItem>) =>
     setFileList((prev) => prev.map((f) => (f.uid === uid ? { ...f, ...patch } : f)));
@@ -123,7 +129,7 @@ export default function UploadMedia({
         checkBody.append("f_size", String(item.file.size));
         checkBody.append("f_md5", md5);
         checkBody.append("ssid", ssid);
-        selectedCustomers.forEach((id, i) => {
+        effectiveCustomers.forEach((id, i) => {
           checkBody.append(`selected_customer_ids[${i}][f_platform]`, "Snapchat");
           checkBody.append(`selected_customer_ids[${i}][customer_ids][]`, id);
         });
@@ -189,7 +195,7 @@ export default function UploadMedia({
         const insertBody = new FormData();
         Object.entries(safeResult).forEach(([k, v]) => insertBody.append(k, String(v)));
         insertBody.append("ssid", ssid);
-        selectedCustomers.forEach((id, i) => {
+        effectiveCustomers.forEach((id, i) => {
           insertBody.append(`selected_customer_ids[${i}][f_platform]`, "Snapchat");
           insertBody.append(`selected_customer_ids[${i}][customer_ids][]`, id);
         });
@@ -215,9 +221,7 @@ export default function UploadMedia({
   const handleUploadAll = async () => {
     const pending = fileList.filter((f) => f.status === "pending" || f.status === "error");
     if (pending.length === 0) return message.warning("没有待上传的文件");
-    // if (!customerId) return message.error("请先选择账户");
-    // if (!agencyId) return message.error("缺少 agencyId 配置");
-    // if (!adminId) return message.error("缺少 adminId 配置");
+    if (effectiveCustomers.length === 0) return message.error("请选择账户");
 
     setUploading(true);
     const results: boolean[] = [];

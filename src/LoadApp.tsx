@@ -394,6 +394,7 @@ function LoadApp() {
         visible={uploadVisible}
         ssid={ssid}
         customerList={customerList}
+        fallbackCustomerId={selectedValue}
         onClose={() => setUploadVisible(false)}
         onSuccess={() => {
           setUploadVisible(false);
