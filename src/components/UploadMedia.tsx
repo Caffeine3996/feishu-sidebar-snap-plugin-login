@@ -118,12 +118,14 @@ export default function UploadMedia({
         const md5 = await computeMd5(item.file);
 
         // ── Step 2: 去重检查 ──────────────────────────────────────
-        const checkBody = new URLSearchParams({
-          f_name: item.file.name,
-          f_size: String(item.file.size),
-          f_md5: md5,
-          ssid: ssid,
-          selected_customer_ids: selectedCustomers.join(","),
+        const checkBody = new FormData();
+        checkBody.append("f_name", item.file.name);
+        checkBody.append("f_size", String(item.file.size));
+        checkBody.append("f_md5", md5);
+        checkBody.append("ssid", ssid);
+        selectedCustomers.forEach((id, i) => {
+          checkBody.append(`selected_customer_ids[${i}][f_platform]`, "Snapchat");
+          checkBody.append(`selected_customer_ids[${i}][customer_ids][]`, id);
         });
         const checkRes = await fetch(CHECK_URL, {
           method: "POST",
@@ -184,10 +186,12 @@ export default function UploadMedia({
 
         // ── Step 4: insert 绑定客户 ────────────────────────────────
         const { admin_id, agency_id, ...safeResult } = uploadResult.result ?? {};
-        const insertBody = new URLSearchParams({
-          ...safeResult,
-          ssid,
-          selected_customer_ids: selectedCustomers.join(","),
+        const insertBody = new FormData();
+        Object.entries(safeResult).forEach(([k, v]) => insertBody.append(k, String(v)));
+        insertBody.append("ssid", ssid);
+        selectedCustomers.forEach((id, i) => {
+          insertBody.append(`selected_customer_ids[${i}][f_platform]`, "Snapchat");
+          insertBody.append(`selected_customer_ids[${i}][customer_ids][]`, id);
         });
         const insertRes = await fetch(INSERT_URL, {
           method: "POST",
