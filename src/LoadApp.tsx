@@ -193,6 +193,7 @@ function LoadApp() {
       setApiDataList(data.data.list);
       setTotal(Number(data.data.total));
       setPage(pageNum);
+      setPageSize(pageSizeNum);
     } catch (err) {
       message.error("接口调用失败");
     }
@@ -225,6 +226,7 @@ function LoadApp() {
       setApiDataListAll(data.rows);
       setTotalAll(data.total);
       setPageAll(pageNum);
+      setPageSizeAll(pageSizeNum);
     } catch (err) {
       message.error("接口调用失败");
     }

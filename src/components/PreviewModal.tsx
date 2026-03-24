@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal, Tooltip, message } from "antd";
+import { PictureOutlined } from "@ant-design/icons";
 
 export default function PreviewModal({ visible, content, onClose }: any) {
   if (!content) return null;
@@ -27,7 +28,20 @@ export default function PreviewModal({ visible, content, onClose }: any) {
             onError={() => message.error("视频无法播放")}
           />
         ) : (
-          <img src={content.url} alt="preview" style={{ width: "100%", height: 400, objectFit: "contain" }} />
+          <div style={{ position: "relative", width: "100%", height: 400 }}>
+            <img
+              src={content.url}
+              alt="preview"
+              style={{ width: "100%", height: 400, objectFit: "contain" }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.removeProperty("display");
+              }}
+            />
+            <div style={{ display: "none", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", fontSize: 48, color: "#ccc" }}>
+              <PictureOutlined />
+            </div>
+          </div>
         )}
       </div>
     </Modal>

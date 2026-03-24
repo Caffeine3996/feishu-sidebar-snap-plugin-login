@@ -24,9 +24,20 @@ export default function MediaGrid({ dataList, selectedIds, onToggleSelect, onPre
                 onChange={(e) => onToggleSelect(item.file_name, e.target.checked)}
               />
               {isVideo ? (
-                <div className={styles.videoPlaceholder}>
-                  <PlayCircleOutlined className={styles.videoPlaceholderIcon} />
-                </div>
+                <>
+                  <img
+                    src={item.f_thumbnail}
+                    alt={item.file_name}
+                    className={styles.img}
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.removeProperty("display");
+                    }}
+                  />
+                  <div className={styles.imgFallback} style={{ display: "none" }}>
+                    <PlayCircleOutlined />
+                  </div>
+                </>
               ) : (
                 <>
                   <img

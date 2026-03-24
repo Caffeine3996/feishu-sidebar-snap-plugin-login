@@ -19,9 +19,15 @@ export default function AllMediaGrid({ dataList, onPreview }: any) {
           return (
             <div key={item.media_id} className={styles.card}>
               {isVideo ? (
-                <div className={styles.videoPlaceholder}>
-                  <PlayCircleOutlined className={styles.videoPlaceholderIcon} />
-                </div>
+                <img
+                  src={item.f_thumbnail}
+                  alt={item.f_name}
+                  className={styles.img}
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.removeProperty("display");
+                  }}
+                />
               ) : (
                 <>
                   <img
