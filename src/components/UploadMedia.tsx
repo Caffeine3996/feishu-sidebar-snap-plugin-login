@@ -97,6 +97,7 @@ export default function UploadMedia({
   const [fileList, setFileList] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
+  const [selectedPlatform, setSelectedPlatform] = useState<string>("Snapchat");
 
   useEffect(() => {
     if (selectedCustomers.length === 0 && fallbackCustomerId && customerList.some((c) => c.customer_id === fallbackCustomerId)) {
@@ -138,7 +139,7 @@ export default function UploadMedia({
         checkBody.append("f_md5", md5);
         checkBody.append("ssid", ssid);
         effectiveCustomers.forEach((id, i) => {
-          checkBody.append(`selected_customer_ids[${i}][f_platform]`, "Snapchat");
+          checkBody.append(`selected_customer_ids[${i}][f_platform]`, selectedPlatform);
           checkBody.append(`selected_customer_ids[${i}][customer_ids][]`, id);
         });
         const checkRes = await fetch(CHECK_URL, {
@@ -204,7 +205,7 @@ export default function UploadMedia({
         Object.entries(safeResult).forEach(([k, v]) => insertBody.append(k, String(v)));
         insertBody.append("ssid", ssid);
         effectiveCustomers.forEach((id, i) => {
-          insertBody.append(`selected_customer_ids[${i}][f_platform]`, "Snapchat");
+          insertBody.append(`selected_customer_ids[${i}][f_platform]`, selectedPlatform);
           insertBody.append(`selected_customer_ids[${i}][customer_ids][]`, id);
         });
         const insertRes = await fetch(INSERT_URL, {
@@ -260,6 +261,7 @@ export default function UploadMedia({
     fileList.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
     setFileList([]);
     setSelectedCustomers([]);
+    setSelectedPlatform("Snapchat");
     onClose();
   };
 
@@ -314,6 +316,18 @@ export default function UploadMedia({
         </div>
       }
     >
+      <div style={{ marginBottom: 16 }}>
+        <span style={{ marginRight: 8, fontSize: 13, color: "#595959" }}>媒体平台：</span>
+        <Select
+          value={selectedPlatform}
+          onChange={(v) => setSelectedPlatform(v)}
+          style={{ width: 140 }}
+          options={[
+            { label: "Snapchat", value: "Snapchat" },
+            { label: "TikTok", value: "TikTok" },
+          ]}
+        />
+      </div>
       <Select
         mode="multiple"
         style={{ width: "100%", marginBottom: 16 }}

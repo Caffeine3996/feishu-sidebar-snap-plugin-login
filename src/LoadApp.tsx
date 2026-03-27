@@ -258,7 +258,7 @@ function LoadApp() {
       <Modal
         open={loginModalVisible}
         closable={false}
-        maskClosable={false}
+        maskClosable={false} 
         footer={null}
         centered
         title="需要登录"
