@@ -41,7 +41,7 @@ function LoadApp() {
   } = useLocalConfig();
 
   // bitable 初始化
-  const { fieldMetaList, fieldValues, recordList, selectFieldId, defaultSelectedValue } =
+  const { fieldMetaList, fieldValues, recordList, selectFieldId, setSelectFieldId } =
     useTableData();
 
   // 登录
@@ -75,13 +75,16 @@ function LoadApp() {
     selectedIds,
   });
 
-  // 表格初始化完成后触发首次请求
+  // 列切换后自动选第一个值并触发请求
   useEffect(() => {
-    if (defaultSelectedValue && selectFieldId) {
-      setSelectedValue(defaultSelectedValue);
-      fetchSnap(1, 10, defaultSelectedValue);
+    if (fieldValues.length > 0 && selectFieldId) {
+      const first = fieldValues[0].value;
+      setSelectedValue(first);
+      fetchSnap(1, 10, first);
+    } else {
+      setSelectedValue(undefined);
     }
-  }, [defaultSelectedValue, selectFieldId]);
+  }, [fieldValues]);
 
   // userInfo 就绪后获取客户素材列表
   useEffect(() => {
@@ -110,6 +113,12 @@ function LoadApp() {
   return (
     <div className={styles.container}>
       <HeaderBar
+        fieldMetaList={fieldMetaList}
+        selectFieldId={selectFieldId}
+        onFieldChange={(id: string) => {
+          setSelectFieldId(id);
+          setSelectedValue(undefined);
+        }}
         fieldValues={fieldValues}
         selectedValue={selectedValue || ""}
         keyword={keyword}

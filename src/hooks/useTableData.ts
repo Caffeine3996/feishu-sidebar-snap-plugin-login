@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { bitable, FieldType, ITextField } from "@lark-base-open/js-sdk";
+import { bitable, ITextField } from "@lark-base-open/js-sdk";
 
 interface FieldOption {
   label: string;
@@ -16,7 +16,7 @@ interface TableDataResult {
   fieldValues: FieldOption[];
   recordList: RecordOption[];
   selectFieldId: string | undefined;
-  defaultSelectedValue: string | undefined;
+  setSelectFieldId: (id: string) => void;
 }
 
 const getCellText = (cell: any): string => {
@@ -35,27 +35,35 @@ export function useTableData(): TableDataResult {
   const [fieldValues, setFieldValues] = useState<FieldOption[]>([]);
   const [recordList, setRecordList] = useState<RecordOption[]>([]);
   const [selectFieldId, setSelectFieldId] = useState<string | undefined>();
-  const [defaultSelectedValue, setDefaultSelectedValue] = useState<string | undefined>();
+  const [table, setTable] = useState<any>(null);
 
+  // 初始化：加载表格和字段列表
   useEffect(() => {
     const init = async () => {
       try {
         await bitable.bridge.getUserId();
-        const table = await bitable.base.getActiveTable();
-        const fields = await table.getFieldMetaList();
+        const t = await bitable.base.getActiveTable();
+        setTable(t);
+        const fields = await t.getFieldMetaList();
         setFieldMetaList(fields);
+      } catch (e) {
+        console.error("获取表格信息失败", e);
+      }
+    };
+    init();
+  }, []);
 
-        const defaultField = fields.find((f) => f.type === FieldType.Text && f.name === "广告账户");
-        if (!defaultField) return;
-
-        setSelectFieldId(defaultField.id);
-        const field = await table.getField<ITextField>(defaultField.id);
+  // 当用户选择列后，从该列读取所有值
+  useEffect(() => {
+    if (!table || !selectFieldId) return;
+    const fetchValues = async () => {
+      try {
+        const field = (await table.getField(selectFieldId)) as ITextField;
         const recordIds = await table.getRecordIdList();
 
-        // 并发获取所有记录值和记录详情
         const [cellValues, records] = await Promise.all([
-          Promise.all(recordIds.map((id) => field.getValue(id))),
-          Promise.all(recordIds.map((id) => table.getRecordById(id))),
+          Promise.all(recordIds.map((id: string) => field.getValue(id))),
+          Promise.all(recordIds.map((id: string) => table.getRecordById(id))),
         ]);
 
         const values: string[] = [];
@@ -65,22 +73,18 @@ export function useTableData(): TableDataResult {
         const options = Array.from(new Set(values)).sort().map((v) => ({ label: v, value: v }));
         setFieldValues(options);
 
-        const recordOptions: RecordOption[] = records.map((record, i) => {
-          const value = record.fields[defaultField.id];
+        const recordOptions: RecordOption[] = records.map((record: any, i: number) => {
+          const value = record.fields[selectFieldId];
           const name = getCellText(value) || `记录 ${recordIds[i]}`;
           return { id: recordIds[i], name };
         });
         setRecordList(recordOptions);
-
-        if (options.length > 0) {
-          setDefaultSelectedValue(options[0].value);
-        }
       } catch (e) {
-        console.error("获取表格信息失败", e);
+        console.error("获取字段值失败", e);
       }
     };
-    init();
-  }, []);
+    fetchValues();
+  }, [table, selectFieldId]);
 
-  return { fieldMetaList, fieldValues, recordList, selectFieldId, defaultSelectedValue };
+  return { fieldMetaList, fieldValues, recordList, selectFieldId, setSelectFieldId };
 }

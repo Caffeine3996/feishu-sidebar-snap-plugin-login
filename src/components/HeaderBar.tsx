@@ -1,10 +1,12 @@
 // HeaderBar.tsx
-import React from "react";
 import { Select, Input, Button } from "antd";
 import { SettingOutlined, CloseOutlined, UploadOutlined, SearchOutlined } from "@ant-design/icons";
 import styles from "../index.module.css";
 
 export default function HeaderBar({
+  fieldMetaList,
+  selectFieldId,
+  onFieldChange,
   fieldValues,
   selectedValue,
   keyword,
@@ -15,14 +17,24 @@ export default function HeaderBar({
   onClearSelected,
   onUploadClick,
 }: any) {
+  const fieldOptions = fieldMetaList.map((f: any) => ({ label: f.name, value: f.id }));
+
   return (
     <div className={styles.selectWrapper}>
       <Select
-        style={{ width: 180 }}
+        style={{ width: 140 }}
+        options={fieldOptions}
+        value={selectFieldId}
+        placeholder="选择列"
+        onChange={onFieldChange}
+      />
+      <Select
+        style={{ width: 160 }}
         options={fieldValues}
-        value={selectedValue}
+        value={selectedValue || undefined}
         placeholder="请选择账户"
         onChange={onAccountChange}
+        disabled={!selectFieldId}
       />
       <Input
         style={{ width: 150 }}
