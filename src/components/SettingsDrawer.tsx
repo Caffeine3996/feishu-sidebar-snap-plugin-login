@@ -7,9 +7,10 @@ interface Props {
   fieldMetaList: { id: string; name: string }[];
   tempRecordId?: string;
   tempTargetFieldId?: string;
-  tempOperationMode?: "add" | "overwrite" | "fillEmpty"; // ✅ 新增
+  tempOperationMode?: "add" | "overwrite" | "fillEmpty";
+  tempSelectFieldId?: string;
   onClose: () => void;
-  onConfirm: (recordId: string, fieldId: string, mode: "add" | "overwrite" | "fillEmpty") => void; // ✅ 新增参数
+  onConfirm: (recordId: string, fieldId: string, mode: "add" | "overwrite" | "fillEmpty", selectFieldId: string) => void;
 }
 
 export default function SettingsDrawer({
@@ -18,14 +19,15 @@ export default function SettingsDrawer({
   fieldMetaList,
   tempRecordId,
   tempTargetFieldId,
-  tempOperationMode = "add", // 默认值
+  tempOperationMode = "add",
+  tempSelectFieldId,
   onClose,
   onConfirm,
 }: Props) {
-  // ✅ 内部状态，控制临时选择值
   const [recordId, setRecordId] = useState<string | undefined>(tempRecordId);
   const [targetFieldId, setTargetFieldId] = useState<string | undefined>(tempTargetFieldId);
   const [operationMode, setOperationMode] = useState<"add" | "overwrite" | "fillEmpty">(tempOperationMode);
+  const [selectFieldId, setSelectFieldId] = useState<string | undefined>(tempSelectFieldId);
 
   // 当外部重新打开时同步初始值
   useEffect(() => {
@@ -33,17 +35,15 @@ export default function SettingsDrawer({
       setRecordId(tempRecordId);
       setTargetFieldId(tempTargetFieldId);
       setOperationMode(tempOperationMode);
+      setSelectFieldId(tempSelectFieldId);
     }
-  }, [visible, tempRecordId, tempTargetFieldId, tempOperationMode]);
+  }, [visible, tempRecordId, tempTargetFieldId, tempOperationMode, tempSelectFieldId]);
 
-  // ✅ 点击确定时才触发 onConfirm
   const handleConfirm = () => {
-    // 仅当 operationMode 为 "add" 时校验必选项
     if (operationMode === "add" && (!recordId || !targetFieldId)) {
       return message.error("请选择源记录和写入列");
     }
-    // 允许其他模式传 undefined，但仍安全传空字符串
-    onConfirm(recordId || "", targetFieldId || "", operationMode);
+    onConfirm(recordId || "", targetFieldId || "", operationMode, selectFieldId || "");
   };
 
 
@@ -66,6 +66,15 @@ export default function SettingsDrawer({
       }
     >
       <Form layout="horizontal" colon={false}>
+        <Form.Item label="账户列">
+          <Select
+            showSearch
+            placeholder="选择账户列"
+            value={selectFieldId}
+            options={fieldMetaList.map((f) => ({ label: f.name, value: f.id }))}
+            onChange={setSelectFieldId}
+          />
+        </Form.Item>
         {/* ✅ 新增：操作模式选择 */}
         <Form.Item label="操作模式">
           <Radio.Group

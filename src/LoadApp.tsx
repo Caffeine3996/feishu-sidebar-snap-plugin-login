@@ -111,12 +111,7 @@ function LoadApp() {
   return (
     <div className={styles.container}>
       <HeaderBar
-        fieldMetaList={fieldMetaList}
         selectFieldId={selectFieldId}
-        onFieldChange={(id: string) => {
-          setSelectFieldId(id);
-          setSelectedValue(undefined);
-        }}
         fieldValues={fieldValues}
         selectedValue={selectedValue || ""}
         keyword={keyword}
@@ -249,9 +244,14 @@ function LoadApp() {
         tempRecordId={selectedRecordId}
         tempTargetFieldId={targetFieldId}
         tempOperationMode={operationMode}
+        tempSelectFieldId={selectFieldId}
         onClose={() => setSettingsVisible(false)}
-        onConfirm={(recordId, fieldId, mode) => {
+        onConfirm={(recordId, fieldId, mode, newSelectFieldId) => {
           saveConfig(recordId, fieldId, mode);
+          if (newSelectFieldId !== selectFieldId) {
+            setSelectFieldId(newSelectFieldId);
+            setSelectedValue(undefined);
+          }
           setSettingsVisible(false);
         }}
       />

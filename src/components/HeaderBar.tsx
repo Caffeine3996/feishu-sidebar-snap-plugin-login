@@ -4,9 +4,6 @@ import { SettingOutlined, CloseOutlined, UploadOutlined, SearchOutlined } from "
 import styles from "../index.module.css";
 
 export default function HeaderBar({
-  fieldMetaList,
-  selectFieldId,
-  onFieldChange,
   fieldValues,
   selectedValue,
   keyword,
@@ -16,18 +13,10 @@ export default function HeaderBar({
   onSettingsClick,
   onClearSelected,
   onUploadClick,
+  selectFieldId,
 }: any) {
-  const fieldOptions = fieldMetaList.map((f: any) => ({ label: f.name, value: f.id }));
-
   return (
     <div className={styles.selectWrapper}>
-      <Select
-        style={{ width: 140 }}
-        options={fieldOptions}
-        value={selectFieldId}
-        placeholder="选择账户列"
-        onChange={onFieldChange}
-      />
       <Select
         style={{ width: 160 }}
         options={fieldValues}
