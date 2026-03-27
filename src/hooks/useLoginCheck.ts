@@ -88,15 +88,16 @@ export function useLoginCheck({ onLoggedIn }: UseLoginCheckOptions = {}) {
       if (type !== "COOKIE_RESULT") return;
 
       const newSsid = data || "";
-      setSsid(newSsid);
 
       checkIsLogin(newSsid).then(({ loggedIn, userInfo: info }) => {
         setChecking(false);
         if (loggedIn && info) {
+          setSsid(newSsid);
           setUserInfo(info);
           setModalVisible(false);
           onLoggedIn?.(newSsid, info);
         } else {
+          setSsid("");
           setUserInfo(null);
           setModalVisible(true);
           if (newSsid) message.warning("还未检测到登录信息，请先前往登录");
