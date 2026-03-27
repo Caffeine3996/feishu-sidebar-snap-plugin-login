@@ -75,12 +75,10 @@ function LoadApp() {
     selectedIds,
   });
 
-  // 列切换后自动选第一个值并触发请求
+  // 列切换后自动选第一个值（请求由关键字 effect 统一触发）
   useEffect(() => {
     if (fieldValues.length > 0 && selectFieldId) {
-      const first = fieldValues[0].value;
-      setSelectedValue(first);
-      fetchSnap(1, 10, first);
+      setSelectedValue(fieldValues[0].value);
     } else {
       setSelectedValue(undefined);
     }
@@ -123,10 +121,7 @@ function LoadApp() {
         selectedValue={selectedValue || ""}
         keyword={keyword}
         selectedCount={selectedIds.size}
-        onAccountChange={(v: string) => {
-          setSelectedValue(v);
-          fetchSnap(1, pageSize, v);
-        }}
+        onAccountChange={(v: string) => setSelectedValue(v)}
         onKeywordChange={(v: string) => setKeyword(v)}
         onSettingsClick={() => setSettingsVisible(true)}
         onClearSelected={() => setSelectedIds(new Set())}
