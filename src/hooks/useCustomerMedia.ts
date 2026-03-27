@@ -26,7 +26,7 @@ export function useCustomerMedia(userInfo: UserInfo | null): CustomerMediaResult
           f_platform: platform,
           search: searchKeyword,
         });
-        const res = await fetch(`/api/controller/disk/manage_media_file.php?${params}`);
+        const res = await fetch(`/controller/disk/manage_media_file.php?${params}`);
         const data = await res.json();
         if (!data.results?.length) {
           setCustomerList([]);

@@ -27,7 +27,7 @@ export function useAllMedia(ssid: string): AllMediaResult {
       if (!currentSsid) return;
       setLoadingAll(true);
       try {
-        const res = await fetch(`/api/controller/disk/get_media_files.php`, {
+        const res = await fetch(`/controller/disk/get_media_files.php`, {
           method: "POST",
           body: new URLSearchParams({
             current: String(pageNum),
