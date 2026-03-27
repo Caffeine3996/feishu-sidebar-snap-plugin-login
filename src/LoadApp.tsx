@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { bitable, FieldType, IRecordValue, ITextField } from "@lark-base-open/js-sdk";
 import { Button, Pagination, message, Modal, Tabs } from "antd";
 import { ReloadOutlined } from "@ant-design/icons";
 import styles from "./index.module.css";
@@ -9,17 +8,13 @@ import AllMediaGrid from "./components/AllMediaGrid";
 import PreviewModal from "./components/PreviewModal";
 import SettingsDrawer from "./components/SettingsDrawer";
 import UploadMedia from "./components/UploadMedia";
-import { useLoginCheck, UserInfo } from "./hooks/useLoginCheck";
-
-interface FieldOption {
-  label: string;
-  value: string;
-}
-
-interface RecordOption {
-  id: string;
-  name: string;
-}
+import { useLoginCheck } from "./hooks/useLoginCheck";
+import { useLocalConfig } from "./hooks/useLocalConfig";
+import { useTableData } from "./hooks/useTableData";
+import { useSnapMedia } from "./hooks/useSnapMedia";
+import { useAllMedia } from "./hooks/useAllMedia";
+import { useCustomerMedia } from "./hooks/useCustomerMedia";
+import { useTableWrite } from "./hooks/useTableWrite";
 
 interface PreviewContent {
   type: "video" | "image";
@@ -27,358 +22,89 @@ interface PreviewContent {
   name: string;
 }
 
-interface CustomerItem {
-  customer_id: string;
-  customer_name: string;
-}
-
-interface CustomerMediaResponse {
-  code: number;
-  msg: string;
-  results: CustomerItem[];
-}
-
 function LoadApp() {
-  const [info, setInfo] = useState<string>("正在获取表格信息，请稍候...");
-  const [fieldMetaList, setFieldMetaList] = useState<any[]>([]);
-  const [fieldValues, setFieldValues] = useState<FieldOption[]>([]);
-  const [recordList, setRecordList] = useState<RecordOption[]>([]);
-
-  const [selectFieldId, setSelectFieldId] = useState<string>();
-  const [selectedValue, setSelectedValue] = useState<string>();
-  const [targetFieldId, setTargetFieldId] = useState<string>();
-  const [selectedRecordId, setSelectedRecordId] = useState<string>();
-
+  const [selectedValue, setSelectedValue] = useState<string | undefined>();
+  const [keyword, setKeyword] = useState("");
   const [activeTab, setActiveTab] = useState<"snap" | "all">("snap");
-
-  const [apiDataList, setApiDataList] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  const [page, setPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
-  const [total, setTotal] = useState<number>(0);
-
-  const [apiDataListAll, setApiDataListAll] = useState<any[]>([]);
-
-  const [pageAll, setPageAll] = useState<number>(1);
-  const [pageSizeAll, setPageSizeAll] = useState<number>(10);
-  const [totalAll, setTotalAll] = useState<number>(0);
-  const [keyword, setKeyword] = useState<string>("");
-
-  const [previewVisible, setPreviewVisible] = useState<boolean>(false);
+  const [previewVisible, setPreviewVisible] = useState(false);
   const [previewContent, setPreviewContent] = useState<PreviewContent | null>(null);
-  const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
-  const [uploadVisible, setUploadVisible] = useState<boolean>(false);
-  const [customerList, setCustomerList] = useState<CustomerItem[]>([]);
-  const [tempRecordId, setTempRecordId] = useState<string | undefined>();
-  const [tempTargetFieldId, setTempTargetFieldId] = useState<string | undefined>();
-  const [operationMode, setOperationMode] = useState<"add" | "overwrite" | "fillEmpty">("add");
+  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [uploadVisible, setUploadVisible] = useState(false);
 
-  // 登录 hook：登录成功后刷新列表
-  const onLoggedIn = useCallback((newSsid: string) => {
-    if (selectedValue && selectFieldId) {
-      handleCallAPI(1, pageSize, selectedValue, selectFieldId, newSsid);
+  // 本地配置
+  const {
+    selectedRecordId,
+    targetFieldId,
+    operationMode,
+    saveConfig,
+  } = useLocalConfig();
+
+  // bitable 初始化
+  const { fieldMetaList, fieldValues, recordList, selectFieldId, defaultSelectedValue } =
+    useTableData();
+
+  // 登录
+  const onLoggedIn = useCallback(
+    (newSsid: string) => {
+      if (selectedValue && selectFieldId) {
+        fetchSnap(1, 10, selectedValue, newSsid, keyword);
+      }
+    },
+    [selectedValue, selectFieldId, keyword]
+  );
+  const {
+    ssid,
+    userInfo,
+    modalVisible: loginModalVisible,
+    checking: loginChecking,
+    refresh: handleCheckLogin,
+  } = useLoginCheck({ onLoggedIn });
+
+  // 媒体数据
+  const { apiDataList, page, pageSize, total, fetchSnap } = useSnapMedia(selectedValue, ssid);
+  const { apiDataListAll, pageAll, pageSizeAll, totalAll, fetchAll } = useAllMedia(ssid);
+  const { customerList, fetchCustomerMedia } = useCustomerMedia(userInfo);
+
+  // 写入表格
+  const { writeToTable } = useTableWrite({
+    selectFieldId,
+    selectedValue,
+    targetFieldId,
+    operationMode,
+    selectedIds,
+  });
+
+  // 表格初始化完成后触发首次请求
+  useEffect(() => {
+    if (defaultSelectedValue && selectFieldId) {
+      setSelectedValue(defaultSelectedValue);
+      fetchSnap(1, 10, defaultSelectedValue);
     }
-  }, [selectedValue, selectFieldId, pageSize]);
-
-  const { ssid, userInfo, modalVisible: loginModalVisible, checking: loginChecking, refresh: handleCheckLogin } = useLoginCheck({ onLoggedIn });
+  }, [defaultSelectedValue, selectFieldId]);
 
   // userInfo 就绪后获取客户素材列表
   useEffect(() => {
     if (userInfo?.agency_ids) {
-      fetchCustomerMedia('');
+      fetchCustomerMedia();
     }
   }, [userInfo]);
 
-  /** 安全获取字段文本 **/
-  const getCellText = (cell: any): string => {
-    if (Array.isArray(cell)) {
-      const first = cell[0];
-      if (typeof first === "object" && first !== null && "text" in first) {
-        return first.text;
-      }
-      return String(first);
-    }
-    return String(cell ?? "");
-  };
-
-  /** 初始化时读取本地存储配置 **/
-  useEffect(() => {
-    const savedConfig = localStorage.getItem("mediaWriterConfig");
-    if (savedConfig) {
-      try {
-        const parsed = JSON.parse(savedConfig);
-        setSelectedRecordId(parsed.recordId);
-        setTargetFieldId(parsed.fieldId);
-        setOperationMode(parsed.operationMode || "add");
-      } catch (err) {
-        console.warn("读取本地配置失败：", err);
-      }
-    }
-  }, []);
-
-  /** 初始化表格信息 **/
-  useEffect(() => {
-    const init = async () => {
-      try {
-        await bitable.bridge.getUserId();
-        const table = await bitable.base.getActiveTable();
-        const fields = await table.getFieldMetaList();
-        setFieldMetaList(fields);
-
-        const defaultField = fields.find((f) => f.type === FieldType.Text && f.name === "广告账户");
-        if (!defaultField) return;
-
-        setSelectFieldId(defaultField.id);
-        const field = await table.getField<ITextField>(defaultField.id);
-        const recordIds = await table.getRecordIdList();
-
-        const values: string[] = [];
-        for (const id of recordIds) {
-          const val = await field.getValue(id);
-          if (Array.isArray(val) && val[0]?.text) values.push(val[0].text.trim());
-        }
-
-        const options = Array.from(new Set(values)).sort().map((v) => ({ label: v, value: v }));
-        setFieldValues(options);
-
-        const recordOptions: RecordOption[] = [];
-        for (const id of recordIds) {
-          const record = await table.getRecordById(id);
-          const value = record.fields[defaultField.id];
-          const name = getCellText(value) || `记录 ${id}`;
-          recordOptions.push({ id, name });
-        }
-        setRecordList(recordOptions);
-
-        if (options.length > 0) {
-          setSelectedValue(options[0].value);
-          handleCallAPI(1, pageSize, options[0].value, defaultField.id);
-        }
-      } catch (e) {
-        console.error(e);
-        setInfo("获取表格信息失败");
-      }
-    };
-    init();
-  }, []);
-
-  /** 调接口 **/
-  const handleCallAPI = async (
-    pageNum: number = page,
-    pageSizeNum: number = pageSize,
-    accountValue: string = selectedValue!,
-    fieldId: string = selectFieldId!,
-    ssidOverride?: string,
-    keywordParam: string = keyword
-  ) => {
-    const currentSsid = ssidOverride ?? ssid;
-    if (!accountValue || !fieldId || !currentSsid) return;
-    try {
-      const res = await fetch(`https://new.inmad.cn/feishu_interface/feishu_snapchat_media.php?`, {
-        method: "POST",
-        body: new URLSearchParams({
-          page: String(pageNum),
-          pageSize: String(pageSizeNum),
-          customerId: accountValue,
-          ...(keywordParam ? { name: keywordParam } : {}),
-        }),
-      });
-      const data = await res.json();
-      if (!data.data?.list?.length) {
-        setApiDataList([]);
-        setTotal(0);
-        return;
-      }
-
-      setApiDataList(data.data.list);
-      setTotal(Number(data.data.total));
-      setPage(pageNum);
-      setPageSize(pageSizeNum);
-    } catch (err) {
-      message.error("接口调用失败");
-    }
-  };
-  const handleCallAPIAll = async (
-    pageNum: number = page,
-    pageSizeNum: number = pageSize,
-    accountValue: string = selectedValue!,
-    fieldId: string = selectFieldId!,
-    ssidOverride?: string
-  ) => {
-    const currentSsid = ssidOverride ?? ssid;
-    if (!accountValue || !fieldId || !currentSsid) return;
-    try {
-      const res = await fetch(`https://bf.show/controller/disk/get_media_files.php`, {
-        method: "POST",
-        body: new URLSearchParams({
-          current: String(pageNum),
-          rowCount: String(pageSizeNum),
-          ssid: currentSsid,
-        }),
-      });
-      const data = await res.json();
-      if (!data.rows?.length) {
-        setApiDataListAll([]);
-        setTotalAll(0);
-        return;
-      }
-
-      setApiDataListAll(data.rows);
-      setTotalAll(data.total);
-      setPageAll(pageNum);
-      setPageSizeAll(pageSizeNum);
-    } catch (err) {
-      message.error("接口调用失败");
-    }
-  };
-
-
-  /** 获取客户素材列表 **/
-  const fetchCustomerMedia = async (searchKeyword: string = keyword) => {
-    const agencyId = userInfo?.agency_ids;
-    if (!agencyId) return;
-    try {
-      const params = new URLSearchParams({
-        type: "customer",
-        agency_id: agencyId,
-        f_platform: "Snapchat",
-        search: searchKeyword,
-      });
-      const res = await fetch(
-        `https://bf.show/controller/disk/manage_media_file.php?${params}`
-      );
-      const data: CustomerMediaResponse = await res.json();
-      if (!data.results?.length) {
-        setCustomerList([]);
-        return;
-      }
-      setCustomerList(data.results);
-      console.log(data,'data')
-    } catch (err) {
-      message.error("获取素材列表失败");
-    }
-  };
-
-  /** 写入表格 **/
-  const writeToTable = async (items: { f_name: string }[]) => {
-    try {
-      const table = await bitable.base.getActiveTable();
-      switch (operationMode) {
-        case "add":
-          await handleAddMode(table, items);
-          break;
-        case "overwrite":
-          await handleOverwriteMode(table);
-          break;
-        case "fillEmpty":
-          await handleFillEmptyMode(table);
-          break;
-        default:
-          message.error("未知的操作模式");
-      }
-    } catch (err) {
-      console.error(err);
-      message.error("写入失败");
-    }
-  };
-
-  const handleAddMode = async (table: any, items: { f_name: string }[]) => {
-    if (!targetFieldId) return message.error("请选择写入列");
-    const field = await table.getField(selectFieldId!);
-    if (!selectedValue) return message.error("请先选择一个源值");
-
-    const sourceRecordId = await findSourceRecordId(table, field, selectedValue);
-    if (!sourceRecordId) return message.warning("未找到源记录");
-
-    const sourceRecord = await table.getRecordById(sourceRecordId);
-    const fieldData = sourceRecord.fields || {};
-
-    const newRecords: IRecordValue[] = items.map((i) => {
-      const fields: Record<string, any> = {};
-      for (const key in fieldData) {
-        const value = fieldData[key];
-        fields[key] = typeof value === "string" ? { type: "text", text: value } : value;
-      }
-      fields[targetFieldId!] = { type: "text", text: i.f_name };
-      return { fields };
-    });
-
-    await table.addRecords(newRecords);
-    message.success(`已创建 ${newRecords.length} 条记录`);
-  };
-
-  const handleOverwriteMode = async (table: any) => {
-    const selection = await bitable.base.getSelection();
-    if (!selection?.fieldId || !selection?.recordId) {
-      return message.error("请先在表格中选中一个单元格");
-    }
-    const textField = await table.getField(selection.fieldId);
-    const firstSelected = Array.from(selectedIds)[0];
-    if (!firstSelected) return message.warning("请选择素材");
-    await textField.setValue(selection.recordId, firstSelected);
-    message.success("已覆盖选中素材");
-  };
-
-  const handleFillEmptyMode = async (table: any) => {
-    const selection = await bitable.base.getSelection();
-    if (!selection?.fieldId) return message.error("请先选中一个单元格所在列");
-
-    const textField = await table.getField(selection.fieldId);
-    const recordIds = await table.getRecordIdList();
-    const selectedArray = Array.from(selectedIds);
-    if (selectedArray.length === 0) return message.warning("请选择至少一个素材");
-
-    let filledCount = 0;
-    let index = 0;
-    for (const recordId of recordIds) {
-      const currentValue = await textField.getValue(recordId);
-      const isEmpty =
-        !currentValue ||
-        (Array.isArray(currentValue) && (!currentValue.length || !currentValue[0]?.text));
-      if (isEmpty) {
-        await textField.setValue(recordId, selectedArray[index % selectedArray.length]);
-        filledCount++;
-        index++;
-      }
-    }
-    message.success(`已依次填充 ${filledCount} 条空白记录`);
-  };
-
-  const findSourceRecordId = async (table: any, field: ITextField, value: string) => {
-    const recordIds = await table.getRecordIdList();
-    for (const id of recordIds) {
-      const val = await field.getValue(id);
-      if (Array.isArray(val) && val[0]?.text === value) return id;
-    }
-    return undefined;
-  };
-
-  /** 关键字防抖搜索 **/
+  // 关键字防抖搜索
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (selectedValue) handleCallAPI(1, pageSize, selectedValue, selectFieldId!);
+      if (selectedValue && selectFieldId) {
+        fetchSnap(1, pageSize, selectedValue, undefined, keyword);
+      }
     }, 300);
     return () => clearTimeout(timer);
-  }, [keyword]);
+  }, [keyword, selectedValue, selectFieldId, pageSize]);
 
-  /** 点击确定时保存本地配置 **/
-  const handleConfirmSettings = (
-    recordId: string,
-    fieldId: string,
-    mode: "add" | "overwrite" | "fillEmpty"
-  ) => {
-    setSelectedRecordId(recordId);
-    setTargetFieldId(fieldId);
-    setOperationMode(mode);
-    setSettingsVisible(false);
-    localStorage.setItem("mediaWriterConfig", JSON.stringify({ recordId, fieldId, operationMode: mode }));
-  };
-
-  const handleOpenSettings = () => {
-    setTempRecordId(selectedRecordId);
-    setTempTargetFieldId(targetFieldId);
-    setSettingsVisible(true);
+  const handlePreview = (item: { name?: string; f_name?: string; f_path: string }) => {
+    const name = item.name ?? item.f_name ?? "";
+    const isVideo = /\.(mp4|mov|avi|mpeg|mpg|wmv|webm)(\?|$)/i.test(item.f_path ?? name);
+    setPreviewContent({ type: isVideo ? "video" : "image", url: item.f_path, name });
+    setPreviewVisible(true);
   };
 
   return (
@@ -390,116 +116,112 @@ function LoadApp() {
         selectedCount={selectedIds.size}
         onAccountChange={(v: string) => {
           setSelectedValue(v);
-          handleCallAPI(1, pageSize, v, selectFieldId!);
+          fetchSnap(1, pageSize, v);
         }}
         onKeywordChange={(v: string) => setKeyword(v)}
-        onSettingsClick={handleOpenSettings}
+        onSettingsClick={() => setSettingsVisible(true)}
         onClearSelected={() => setSelectedIds(new Set())}
         onUploadClick={() => setUploadVisible(true)}
       />
 
       <div className={styles.tabsWrapper}>
-      <Tabs
-        activeKey={activeTab}
-        onChange={(key) => {
-          setActiveTab(key as "snap" | "all");
-          if (key === "all" && apiDataListAll.length === 0) {
-            handleCallAPIAll(1, pageSizeAll);
+        <Tabs
+          activeKey={activeTab}
+          onChange={(key) => {
+            setActiveTab(key as "snap" | "all");
+            if (key === "all" && apiDataListAll.length === 0) {
+              fetchAll(1, pageSizeAll);
+            }
+          }}
+          tabBarExtraContent={
+            <ReloadOutlined
+              style={{ cursor: "pointer", color: "#595959", marginRight: 8 }}
+              onClick={() => {
+                if (activeTab === "snap") {
+                  fetchSnap(1, pageSize, selectedValue);
+                } else {
+                  fetchAll(1, pageSizeAll);
+                }
+              }}
+            />
           }
-        }}
-        tabBarExtraContent={
-          <ReloadOutlined
-            style={{ cursor: "pointer", color: "#595959", marginRight: 8 }}
-            onClick={() => {
-              if (activeTab === "snap") {
-                handleCallAPI(1, pageSize, selectedValue!, selectFieldId!);
-              } else {
-                handleCallAPIAll(1, pageSizeAll);
-              }
-            }}
-          />
-        }
-        items={[
-          {
-            key: "snap",
-            label: "媒体素材",
-            children: (
-              <div className={styles.tabContent}>
-                <div className={styles.tabScrollArea}>
-                  <MediaGrid
-                    dataList={apiDataList}
-                    selectedIds={selectedIds}
-                    onToggleSelect={(name: string, checked: boolean) =>
-                      setSelectedIds((prev) => {
-                        const s = new Set(prev);
-                        checked ? s.add(name) : s.delete(name);
-                        return s;
-                      })
-                    }
-                    onPreview={(item: { name: string; f_path: string }) => {
-                      const isVideo = /\.(mp4|mov|avi|mpeg|mpg|wmv|webm)(\?|$)/i.test(item.f_path ?? item.name ?? "");
-                      setPreviewContent({ type: isVideo ? "video" : "image", url: item.f_path, name: item.name });
-                      setPreviewVisible(true);
-                    }}
-                  />
-                </div>
-                {apiDataList.length > 0 && (
-                  <div className={styles.footer}>
-                    <Pagination
-                      current={page}
-                      pageSize={pageSize}
-                      total={total}
-                      showSizeChanger
-                      onChange={(p, size) => handleCallAPI(p, size)}
-                    />
-                    <Button
-                      type="primary"
-                      onClick={() => {
-                        if (selectedIds.size === 0) return message.warning("请选择素材");
-                        writeToTable(Array.from(selectedIds).map((name) => ({ f_name: name })));
-                      }}
-                    >
-                      写入选中数据到表格
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ),
-          },
-          {
-            key: "all",
-            label: "亿帆素材",
-            children: (
-              <div className={styles.tabContent}>
-                <div className={styles.tabScrollArea}>
-                  <AllMediaGrid
-                    dataList={apiDataListAll}
-                    onPreview={(item: { f_name: string; f_path: string }) => {
-                      const isVideo = /\.(mp4|mov|avi|mpeg|mpg|wmv|webm)(\?|$)/i.test(item.f_path ?? item.f_name ?? "");
-                      setPreviewContent({ type: isVideo ? "video" : "image", url: item.f_path, name: item.f_name });
-                      setPreviewVisible(true);
-                    }}
-                  />
-                </div>
-                {apiDataListAll.length > 0 && (
-                  <div className={styles.footer}>
-                    <Pagination
-                      current={pageAll}
-                      pageSize={pageSizeAll}
-                      total={totalAll}
-                      showSizeChanger
-                      onChange={(p, size) => handleCallAPIAll(p, size)}
+          items={[
+            {
+              key: "snap",
+              label: "媒体素材",
+              children: (
+                <div className={styles.tabContent}>
+                  <div className={styles.tabScrollArea}>
+                    <MediaGrid
+                      dataList={apiDataList}
+                      selectedIds={selectedIds}
+                      onToggleSelect={(name: string, checked: boolean) =>
+                        setSelectedIds((prev) => {
+                          const s = new Set(prev);
+                          checked ? s.add(name) : s.delete(name);
+                          return s;
+                        })
+                      }
+                      onPreview={(item: { name: string; f_path: string }) => handlePreview(item)}
                     />
                   </div>
-                )}
-              </div>
-            ),
-          },
-        ]}
-      />
+                  {apiDataList.length > 0 && (
+                    <div className={styles.footer}>
+                      <Pagination
+                        current={page}
+                        pageSize={pageSize}
+                        total={total}
+                        showSizeChanger
+                        onChange={(p, size) => fetchSnap(p, size)}
+                      />
+                      <Button
+                        type="primary"
+                        onClick={() => {
+                          if (selectedIds.size === 0) return message.warning("请选择素材");
+                          writeToTable(Array.from(selectedIds).map((name) => ({ f_name: name })));
+                        }}
+                      >
+                        写入选中数据到表格
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ),
+            },
+            {
+              key: "all",
+              label: "亿帆素材",
+              children: (
+                <div className={styles.tabContent}>
+                  <div className={styles.tabScrollArea}>
+                    <AllMediaGrid
+                      dataList={apiDataListAll}
+                      onPreview={(item: { f_name: string; f_path: string }) => handlePreview(item)}
+                    />
+                  </div>
+                  {apiDataListAll.length > 0 && (
+                    <div className={styles.footer}>
+                      <Pagination
+                        current={pageAll}
+                        pageSize={pageSizeAll}
+                        total={totalAll}
+                        showSizeChanger
+                        onChange={(p, size) => fetchAll(p, size)}
+                      />
+                    </div>
+                  )}
+                </div>
+              ),
+            },
+          ]}
+        />
       </div>
 
-      <PreviewModal visible={previewVisible} content={previewContent} onClose={() => setPreviewVisible(false)} />
+      <PreviewModal
+        visible={previewVisible}
+        content={previewContent}
+        onClose={() => setPreviewVisible(false)}
+      />
       <UploadMedia
         visible={uploadVisible}
         ssid={ssid}
@@ -508,18 +230,21 @@ function LoadApp() {
         onClose={() => setUploadVisible(false)}
         onSuccess={() => {
           setUploadVisible(false);
-          handleCallAPI(1, pageSize, selectedValue!, selectFieldId!);
+          fetchSnap(1, pageSize, selectedValue);
         }}
       />
       <SettingsDrawer
         visible={settingsVisible}
         recordList={recordList}
         fieldMetaList={fieldMetaList}
-        tempRecordId={tempRecordId}
-        tempTargetFieldId={tempTargetFieldId}
+        tempRecordId={selectedRecordId}
+        tempTargetFieldId={targetFieldId}
         tempOperationMode={operationMode}
         onClose={() => setSettingsVisible(false)}
-        onConfirm={handleConfirmSettings}
+        onConfirm={(recordId, fieldId, mode) => {
+          saveConfig(recordId, fieldId, mode);
+          setSettingsVisible(false);
+        }}
       />
 
       <Modal

@@ -1,0 +1,121 @@
+import { useCallback } from "react";
+import { bitable, IRecordValue, ITextField } from "@lark-base-open/js-sdk";
+import { message } from "antd";
+
+type OperationMode = "add" | "overwrite" | "fillEmpty";
+
+interface TableWriteOptions {
+  selectFieldId: string | undefined;
+  selectedValue: string | undefined;
+  targetFieldId: string | undefined;
+  operationMode: OperationMode;
+  selectedIds: Set<string>;
+}
+
+export function useTableWrite({
+  selectFieldId,
+  selectedValue,
+  targetFieldId,
+  operationMode,
+  selectedIds,
+}: TableWriteOptions) {
+  const findSourceRecordId = async (table: any, field: ITextField, value: string) => {
+    const recordIds = await table.getRecordIdList();
+    for (const id of recordIds) {
+      const val = await field.getValue(id);
+      if (Array.isArray(val) && val[0]?.text === value) return id;
+    }
+    return undefined;
+  };
+
+  const handleAddMode = async (table: any, items: { f_name: string }[]) => {
+    if (!targetFieldId) return message.error("请选择写入列");
+    if (!selectFieldId) return message.error("字段未初始化");
+    if (!selectedValue) return message.error("请先选择一个源值");
+
+    const field = await table.getField(selectFieldId);
+    const sourceRecordId = await findSourceRecordId(table, field, selectedValue);
+    if (!sourceRecordId) return message.warning("未找到源记录");
+
+    const sourceRecord = await table.getRecordById(sourceRecordId);
+    const fieldData = sourceRecord.fields || {};
+
+    const newRecords: IRecordValue[] = items.map((i) => {
+      const fields: Record<string, any> = {};
+      for (const key in fieldData) {
+        const value = fieldData[key];
+        fields[key] = typeof value === "string" ? { type: "text", text: value } : value;
+      }
+      fields[targetFieldId!] = { type: "text", text: i.f_name };
+      return { fields };
+    });
+
+    await table.addRecords(newRecords);
+    message.success(`已创建 ${newRecords.length} 条记录`);
+  };
+
+  const handleOverwriteMode = async (table: any) => {
+    const selection = await bitable.base.getSelection();
+    if (!selection?.fieldId || !selection?.recordId) {
+      return message.error("请先在表格中选中一个单元格");
+    }
+    const textField = await table.getField(selection.fieldId);
+    const firstSelected = Array.from(selectedIds)[0];
+    if (!firstSelected) return message.warning("请选择素材");
+    await textField.setValue(selection.recordId, firstSelected);
+    message.success("已覆盖选中素材");
+  };
+
+  const handleFillEmptyMode = async (table: any) => {
+    const selection = await bitable.base.getSelection();
+    if (!selection?.fieldId) return message.error("请先选中一个单元格所在列");
+
+    const textField = await table.getField(selection.fieldId);
+    const recordIds = await table.getRecordIdList();
+    const selectedArray = Array.from(selectedIds);
+    if (selectedArray.length === 0) return message.warning("请选择至少一个素材");
+
+    let filledCount = 0;
+    let index = 0;
+    for (const recordId of recordIds) {
+      const currentValue = await textField.getValue(recordId);
+      const isEmpty =
+        !currentValue ||
+        (Array.isArray(currentValue) && (!currentValue.length || !currentValue[0]?.text));
+      if (isEmpty) {
+        await textField.setValue(recordId, selectedArray[index % selectedArray.length]);
+        filledCount++;
+        index++;
+      }
+    }
+    message.success(`已依次填充 ${filledCount} 条空白记录`);
+  };
+
+  const writeToTable = useCallback(
+    async (items: { f_name: string }[]) => {
+      try {
+        const table = await bitable.base.getActiveTable();
+        switch (operationMode) {
+          case "add":
+            await handleAddMode(table, items);
+            break;
+          case "overwrite":
+            await handleOverwriteMode(table);
+            break;
+          case "fillEmpty":
+            await handleFillEmptyMode(table);
+            break;
+          default:
+            message.error("未知的操作模式");
+        }
+      } catch (err) {
+        console.error(err);
+        message.error("写入失败");
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectFieldId, selectedValue, targetFieldId, operationMode, selectedIds]
+  );
+
+  return { writeToTable };
+}

@@ -58,7 +58,7 @@ async function checkIsLogin(ssid: string): Promise<LoginResult> {
   if (!ssid) return { loggedIn: false, userInfo: null };
   try {
     const res = await fetch(
-      `https://bf.show/inc/is_login.php?ssid=${encodeURIComponent(ssid)}`
+      `/api/inc/is_login.php?ssid=${encodeURIComponent(ssid)}`
     );
     const data = await res.json();
     if (data.code === 200) {

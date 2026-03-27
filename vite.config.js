@@ -12,7 +12,7 @@ export default defineConfig({
     // 👇 重点：代理配置
     proxy: {
       "/api": {
-        target: "https://new.inmad.cn", // 你的后端域名
+        target: "https://bf.show", // 你的后端域名
         changeOrigin: true, // 允许跨域
         rewrite: (path) => path.replace(/^\/api/, ""), // 去掉 /api 前缀
       },
