@@ -240,6 +240,7 @@ function LoadApp() {
           setUploadVisible(false);
           fetchSnap(1, pageSize, selectedValue);
         }}
+        onPlatformChange={(platform) => fetchCustomerMedia(platform)}
       />
       <SettingsDrawer
         visible={settingsVisible}

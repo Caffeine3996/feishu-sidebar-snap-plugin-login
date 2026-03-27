@@ -54,6 +54,7 @@ interface Props {
   fallbackCustomerId?: string;
   onClose: () => void;
   onSuccess: () => void;
+  onPlatformChange?: (platform: string) => void;
 }
 
 /** 分块计算 MD5，与 PHP getFileMd5 逻辑完全一致 */
@@ -93,6 +94,7 @@ export default function UploadMedia({
   fallbackCustomerId,
   onClose,
   onSuccess,
+  onPlatformChange,
 }: Props) {
   const [fileList, setFileList] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -320,7 +322,11 @@ export default function UploadMedia({
         <span style={{ marginRight: 8, fontSize: 13, color: "#595959" }}>媒体平台：</span>
         <Select
           value={selectedPlatform}
-          onChange={(v) => setSelectedPlatform(v)}
+          onChange={(v) => {
+            setSelectedPlatform(v);
+            setSelectedCustomers([]);
+            onPlatformChange?.(v);
+          }}
           style={{ width: 140 }}
           options={[
             { label: "Snapchat", value: "Snapchat" },
