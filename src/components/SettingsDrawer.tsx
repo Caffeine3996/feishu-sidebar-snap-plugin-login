@@ -9,6 +9,7 @@ interface Props {
   tempTargetFieldId?: string;
   tempOperationMode?: "add" | "overwrite" | "fillEmpty";
   tempSelectFieldId?: string;
+  onSelectFieldChange?: (fieldId: string) => void;
   onClose: () => void;
   onConfirm: (recordId: string, fieldId: string, mode: "add" | "overwrite" | "fillEmpty", selectFieldId: string) => void;
 }
@@ -21,6 +22,7 @@ export default function SettingsDrawer({
   tempTargetFieldId,
   tempOperationMode = "add",
   tempSelectFieldId,
+  onSelectFieldChange,
   onClose,
   onConfirm,
 }: Props) {
@@ -72,7 +74,10 @@ export default function SettingsDrawer({
             placeholder="选择账户列"
             value={selectFieldId}
             options={fieldMetaList.map((f) => ({ label: f.name, value: f.id }))}
-            onChange={setSelectFieldId}
+            onChange={(id) => {
+              setSelectFieldId(id);
+              onSelectFieldChange?.(id);
+            }}
           />
         </Form.Item>
         {/* ✅ 新增：操作模式选择 */}

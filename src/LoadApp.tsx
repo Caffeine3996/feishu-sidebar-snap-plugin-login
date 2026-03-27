@@ -41,7 +41,7 @@ function LoadApp() {
   } = useLocalConfig();
 
   // bitable 初始化
-  const { fieldMetaList, fieldValues, recordList, selectFieldId, setSelectFieldId } =
+  const { fieldMetaList, fieldValues, recordList, selectFieldId, setSelectFieldId, fetchRecordsByField } =
     useTableData();
 
   // 登录
@@ -245,6 +245,7 @@ function LoadApp() {
         tempTargetFieldId={targetFieldId}
         tempOperationMode={operationMode}
         tempSelectFieldId={selectFieldId}
+        onSelectFieldChange={fetchRecordsByField}
         onClose={() => setSettingsVisible(false)}
         onConfirm={(recordId, fieldId, mode, newSelectFieldId) => {
           saveConfig(recordId, fieldId, mode);

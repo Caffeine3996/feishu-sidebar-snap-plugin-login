@@ -17,6 +17,7 @@ interface TableDataResult {
   recordList: RecordOption[];
   selectFieldId: string | undefined;
   setSelectFieldId: (id: string) => void;
+  fetchRecordsByField: (fieldId: string) => Promise<void>;
 }
 
 const getCellText = (cell: any): string => {
@@ -53,38 +54,40 @@ export function useTableData(): TableDataResult {
     init();
   }, []);
 
+  const fetchRecordsByField = async (fieldId: string) => {
+    if (!table || !fieldId) return;
+    try {
+      const field = (await table.getField(fieldId)) as ITextField;
+      const recordIds = await table.getRecordIdList();
+
+      const [cellValues, records] = await Promise.all([
+        Promise.all(recordIds.map((id: string) => field.getValue(id))),
+        Promise.all(recordIds.map((id: string) => table.getRecordById(id))),
+      ]);
+
+      const values: string[] = [];
+      for (const val of cellValues) {
+        if (Array.isArray(val) && val[0]?.text) values.push(val[0].text.trim());
+      }
+      const options = Array.from(new Set(values)).sort().map((v) => ({ label: v, value: v }));
+      setFieldValues(options);
+
+      const recordOptions: RecordOption[] = records.map((record: any, i: number) => {
+        const value = record.fields[fieldId];
+        const name = getCellText(value) || `记录 ${recordIds[i]}`;
+        return { id: recordIds[i], name };
+      });
+      setRecordList(recordOptions);
+    } catch (e) {
+      console.error("获取字段值失败", e);
+    }
+  };
+
   // 当用户选择列后，从该列读取所有值
   useEffect(() => {
     if (!table || !selectFieldId) return;
-    const fetchValues = async () => {
-      try {
-        const field = (await table.getField(selectFieldId)) as ITextField;
-        const recordIds = await table.getRecordIdList();
-
-        const [cellValues, records] = await Promise.all([
-          Promise.all(recordIds.map((id: string) => field.getValue(id))),
-          Promise.all(recordIds.map((id: string) => table.getRecordById(id))),
-        ]);
-
-        const values: string[] = [];
-        for (const val of cellValues) {
-          if (Array.isArray(val) && val[0]?.text) values.push(val[0].text.trim());
-        }
-        const options = Array.from(new Set(values)).sort().map((v) => ({ label: v, value: v }));
-        setFieldValues(options);
-
-        const recordOptions: RecordOption[] = records.map((record: any, i: number) => {
-          const value = record.fields[selectFieldId];
-          const name = getCellText(value) || `记录 ${recordIds[i]}`;
-          return { id: recordIds[i], name };
-        });
-        setRecordList(recordOptions);
-      } catch (e) {
-        console.error("获取字段值失败", e);
-      }
-    };
-    fetchValues();
+    fetchRecordsByField(selectFieldId);
   }, [table, selectFieldId]);
 
-  return { fieldMetaList, fieldValues, recordList, selectFieldId, setSelectFieldId };
+  return { fieldMetaList, fieldValues, recordList, selectFieldId, setSelectFieldId, fetchRecordsByField };
 }

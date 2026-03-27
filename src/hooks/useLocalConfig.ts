@@ -19,7 +19,6 @@ export function useLocalConfig(): LocalConfig {
     if (!saved) return;
     try {
       const parsed = JSON.parse(saved);
-      setSelectedRecordId(parsed.recordId);
       setTargetFieldId(parsed.fieldId);
       setOperationMode(parsed.operationMode || "add");
     } catch (err) {
@@ -31,7 +30,7 @@ export function useLocalConfig(): LocalConfig {
     setSelectedRecordId(recordId);
     setTargetFieldId(fieldId);
     setOperationMode(mode);
-    localStorage.setItem("mediaWriterConfig", JSON.stringify({ recordId, fieldId, operationMode: mode }));
+    localStorage.setItem("mediaWriterConfig", JSON.stringify({ fieldId, operationMode: mode }));
   };
 
   return { selectedRecordId, targetFieldId, operationMode, saveConfig };
