@@ -25,7 +25,7 @@ export default function HeaderBar({
         style={{ width: 140 }}
         options={fieldOptions}
         value={selectFieldId}
-        placeholder="选择列"
+        placeholder="选择账户列"
         onChange={onFieldChange}
       />
       <Select
