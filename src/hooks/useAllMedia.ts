@@ -6,6 +6,7 @@ interface AllMediaResult {
   pageAll: number;
   pageSizeAll: number;
   totalAll: number;
+  loadingAll: boolean;
   fetchAll: (pageNum?: number, pageSizeNum?: number, ssidOverride?: string) => Promise<void>;
 }
 
@@ -14,6 +15,7 @@ export function useAllMedia(ssid: string): AllMediaResult {
   const [pageAll, setPageAll] = useState(1);
   const [pageSizeAll, setPageSizeAll] = useState(10);
   const [totalAll, setTotalAll] = useState(0);
+  const [loadingAll, setLoadingAll] = useState(false);
 
   const fetchAll = useCallback(
     async (
@@ -23,6 +25,7 @@ export function useAllMedia(ssid: string): AllMediaResult {
     ) => {
       const currentSsid = ssidOverride ?? ssid;
       if (!currentSsid) return;
+      setLoadingAll(true);
       try {
         const res = await fetch(`/api/controller/disk/get_media_files.php`, {
           method: "POST",
@@ -44,10 +47,12 @@ export function useAllMedia(ssid: string): AllMediaResult {
         setPageSizeAll(pageSizeNum);
       } catch {
         message.error("接口调用失败");
+      } finally {
+        setLoadingAll(false);
       }
     },
     [pageAll, pageSizeAll, ssid]
   );
 
-  return { apiDataListAll, pageAll, pageSizeAll, totalAll, fetchAll };
+  return { apiDataListAll, pageAll, pageSizeAll, totalAll, loadingAll, fetchAll };
 }

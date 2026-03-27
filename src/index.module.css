@@ -80,6 +80,11 @@
   min-height: 0;
 }
 
+.tabScrollArea :global(.ant-spin-nested-loading),
+.tabScrollArea :global(.ant-spin-container) {
+  height: 100%;
+}
+
 .gridContainer {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

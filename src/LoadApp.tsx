@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Button, Pagination, message, Modal, Tabs } from "antd";
+import { Button, Pagination, message, Modal, Tabs, Spin } from "antd";
 import { ReloadOutlined } from "@ant-design/icons";
 import styles from "./index.module.css";
 import HeaderBar from "./components/HeaderBar";
@@ -62,8 +62,8 @@ function LoadApp() {
   } = useLoginCheck({ onLoggedIn });
 
   // 媒体数据
-  const { apiDataList, page, pageSize, total, fetchSnap } = useSnapMedia(selectedValue, ssid);
-  const { apiDataListAll, pageAll, pageSizeAll, totalAll, fetchAll } = useAllMedia(ssid);
+  const { apiDataList, page, pageSize, total, loading, fetchSnap } = useSnapMedia(selectedValue, ssid);
+  const { apiDataListAll, pageAll, pageSizeAll, totalAll, loadingAll, fetchAll } = useAllMedia(ssid);
   const { customerList, fetchCustomerMedia } = useCustomerMedia(userInfo);
 
   // 写入表格
@@ -155,8 +155,9 @@ function LoadApp() {
               label: "媒体素材",
               children: (
                 <div className={styles.tabContent}>
-                  <div className={styles.tabScrollArea}>
-                    <MediaGrid
+                <div className={styles.tabScrollArea}>
+                    <Spin spinning={loading}>
+                      <MediaGrid
                       dataList={apiDataList}
                       selectedIds={selectedIds}
                       onToggleSelect={(name: string, checked: boolean) =>
@@ -168,6 +169,7 @@ function LoadApp() {
                       }
                       onPreview={(item: { name: string; f_path: string }) => handlePreview(item)}
                     />
+                    </Spin>
                   </div>
                   {apiDataList.length > 0 && (
                     <div className={styles.footer}>
@@ -198,10 +200,12 @@ function LoadApp() {
               children: (
                 <div className={styles.tabContent}>
                   <div className={styles.tabScrollArea}>
-                    <AllMediaGrid
-                      dataList={apiDataListAll}
-                      onPreview={(item: { f_name: string; f_path: string }) => handlePreview(item)}
-                    />
+                    <Spin spinning={loadingAll}>
+                      <AllMediaGrid
+                        dataList={apiDataListAll}
+                        onPreview={(item: { f_name: string; f_path: string }) => handlePreview(item)}
+                      />
+                    </Spin>
                   </div>
                   {apiDataListAll.length > 0 && (
                     <div className={styles.footer}>

@@ -6,6 +6,7 @@ interface SnapMediaResult {
   page: number;
   pageSize: number;
   total: number;
+  loading: boolean;
   fetchSnap: (
     pageNum?: number,
     pageSizeNum?: number,
@@ -23,6 +24,7 @@ export function useSnapMedia(
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const fetchSnap = useCallback(
     async (
@@ -34,6 +36,7 @@ export function useSnapMedia(
     ) => {
       const currentSsid = ssidOverride ?? ssid;
       if (!accountValue || !currentSsid) return;
+      setLoading(true);
       try {
         const res = await fetch(`https://new.inmad.cn/feishu_interface/feishu_snapchat_media.php?`, {
           method: "POST",
@@ -56,10 +59,12 @@ export function useSnapMedia(
         setPageSize(pageSizeNum);
       } catch {
         message.error("接口调用失败");
+      } finally {
+        setLoading(false);
       }
     },
     [page, pageSize, selectedValue, ssid]
   );
 
-  return { apiDataList, page, pageSize, total, fetchSnap };
+  return { apiDataList, page, pageSize, total, loading, fetchSnap };
 }
