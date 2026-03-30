@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Button, Pagination, message, Modal, Tabs, Spin } from "antd";
 import { ReloadOutlined } from "@ant-design/icons";
 import styles from "./index.module.css";
@@ -267,7 +267,6 @@ function LoadApp() {
         tempSelectFieldId={selectFieldId ?? savedSelectFieldId}
         tempPlatform={platform}
         onSelectFieldChange={fetchRecordsByField}
-        onClose={() => setSettingsVisible(false)}
         onConfirm={(recordId, fieldId, mode, newSelectFieldId, newPlatform) => {
           saveConfig(newSelectFieldId, recordId, fieldId, mode, newPlatform);
           if (newSelectFieldId !== selectFieldId) {

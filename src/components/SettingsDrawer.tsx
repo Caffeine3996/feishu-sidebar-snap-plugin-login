@@ -11,7 +11,6 @@ interface Props {
   tempSelectFieldId?: string;
   tempPlatform?: string;
   onSelectFieldChange?: (fieldId: string) => void;
-  onClose: () => void;
   onConfirm: (recordId: string, fieldId: string, mode: "add" | "overwrite" | "fillEmpty", selectFieldId: string, platform: string) => void;
 }
 
@@ -30,7 +29,6 @@ export default function SettingsDrawer({
   tempSelectFieldId,
   tempPlatform = "Snapchat",
   onSelectFieldChange,
-  onClose,
   onConfirm,
 }: Props) {
   const [recordId, setRecordId] = useState<string | undefined>(tempRecordId);
@@ -61,13 +59,11 @@ export default function SettingsDrawer({
     <Modal
       title="设置"
       width={480}
-      onCancel={onClose}
+      closable={false}
+      maskClosable={false}
       open={visible}
       footer={
         <div style={{ textAlign: "right" }}>
-          <Button onClick={onClose} style={{ marginRight: 8 }}>
-            取消
-          </Button>
           <Button type="primary" onClick={handleConfirm}>
             确定
           </Button>
