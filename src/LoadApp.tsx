@@ -41,6 +41,7 @@ function LoadApp() {
     selectedRecordId,
     targetFieldId,
     operationMode,
+    platform,
     saveConfig,
   } = useLocalConfig();
 
@@ -249,12 +250,12 @@ function LoadApp() {
         ssid={ssid}
         customerList={customerList}
         fallbackCustomerId={selectedValue}
+        platform={platform}
         onClose={() => setUploadVisible(false)}
         onSuccess={() => {
           setUploadVisible(false);
           fetchSnap(1, pageSize, selectedValue);
         }}
-        onPlatformChange={(platform) => fetchCustomerMedia(platform)}
       />
       <SettingsDrawer
         visible={settingsVisible}
@@ -264,13 +265,17 @@ function LoadApp() {
         tempTargetFieldId={targetFieldId}
         tempOperationMode={operationMode}
         tempSelectFieldId={selectFieldId ?? savedSelectFieldId}
+        tempPlatform={platform}
         onSelectFieldChange={fetchRecordsByField}
         onClose={() => setSettingsVisible(false)}
-        onConfirm={(recordId, fieldId, mode, newSelectFieldId) => {
-          saveConfig(newSelectFieldId, recordId, fieldId, mode);
+        onConfirm={(recordId, fieldId, mode, newSelectFieldId, newPlatform) => {
+          saveConfig(newSelectFieldId, recordId, fieldId, mode, newPlatform);
           if (newSelectFieldId !== selectFieldId) {
             setSelectFieldId(newSelectFieldId);
             setSelectedValue(undefined);
+          }
+          if (newPlatform !== platform) {
+            fetchCustomerMedia(newPlatform);
           }
           setSettingsVisible(false);
         }}

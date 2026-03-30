@@ -7,7 +7,8 @@ interface LocalConfig {
   selectedRecordId: string | undefined;
   targetFieldId: string | undefined;
   operationMode: OperationMode;
-  saveConfig: (selectFieldId: string, recordId: string, fieldId: string, mode: OperationMode) => void;
+  platform: string;
+  saveConfig: (selectFieldId: string, recordId: string, fieldId: string, mode: OperationMode, platform: string) => void;
 }
 
 export function useLocalConfig(): LocalConfig {
@@ -15,6 +16,7 @@ export function useLocalConfig(): LocalConfig {
   const [selectedRecordId, setSelectedRecordId] = useState<string | undefined>();
   const [targetFieldId, setTargetFieldId] = useState<string | undefined>();
   const [operationMode, setOperationMode] = useState<OperationMode>("add");
+  const [platform, setPlatform] = useState<string>("Snapchat");
 
   useEffect(() => {
     const saved = localStorage.getItem("mediaWriterConfig");
@@ -25,21 +27,23 @@ export function useLocalConfig(): LocalConfig {
       setSelectedRecordId(parsed.recordId);
       setTargetFieldId(parsed.fieldId);
       setOperationMode(parsed.operationMode || "add");
+      setPlatform(parsed.platform || "Snapchat");
     } catch (err) {
       console.warn("读取本地配置失败：", err);
     }
   }, []);
 
-  const saveConfig = (selectFieldId: string, recordId: string, fieldId: string, mode: OperationMode) => {
+  const saveConfig = (selectFieldId: string, recordId: string, fieldId: string, mode: OperationMode, plat: string) => {
     setSavedSelectFieldId(selectFieldId);
     setSelectedRecordId(recordId);
     setTargetFieldId(fieldId);
     setOperationMode(mode);
+    setPlatform(plat);
     localStorage.setItem(
       "mediaWriterConfig",
-      JSON.stringify({ selectFieldId, recordId, fieldId, operationMode: mode })
+      JSON.stringify({ selectFieldId, recordId, fieldId, operationMode: mode, platform: plat })
     );
   };
 
-  return { savedSelectFieldId, selectedRecordId, targetFieldId, operationMode, saveConfig };
+  return { savedSelectFieldId, selectedRecordId, targetFieldId, operationMode, platform, saveConfig };
 }

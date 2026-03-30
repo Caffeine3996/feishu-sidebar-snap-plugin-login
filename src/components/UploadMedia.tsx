@@ -52,9 +52,9 @@ interface Props {
   ssid: string;
   customerList: CustomerItem[];
   fallbackCustomerId?: string;
+  platform: string;
   onClose: () => void;
   onSuccess: () => void;
-  onPlatformChange?: (platform: string) => void;
 }
 
 /** 分块计算 MD5，与 PHP getFileMd5 逻辑完全一致 */
@@ -92,14 +92,14 @@ export default function UploadMedia({
   ssid,
   customerList,
   fallbackCustomerId,
+  platform,
   onClose,
   onSuccess,
-  onPlatformChange,
 }: Props) {
   const [fileList, setFileList] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
-  const [selectedPlatform, setSelectedPlatform] = useState<string>("Snapchat");
+  const selectedPlatform = platform;
 
   useEffect(() => {
     if (selectedCustomers.length === 0 && fallbackCustomerId && customerList.some((c) => c.customer_id === fallbackCustomerId)) {
@@ -263,7 +263,6 @@ export default function UploadMedia({
     fileList.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
     setFileList([]);
     setSelectedCustomers([]);
-    setSelectedPlatform("Snapchat");
     onClose();
   };
 
@@ -320,19 +319,7 @@ export default function UploadMedia({
     >
       <div style={{ marginBottom: 16 }}>
         <span style={{ marginRight: 8, fontSize: 13, color: "#595959" }}>媒体平台：</span>
-        <Select
-          value={selectedPlatform}
-          onChange={(v) => {
-            setSelectedPlatform(v);
-            setSelectedCustomers([]);
-            onPlatformChange?.(v);
-          }}
-          style={{ width: 140 }}
-          options={[
-            { label: "Snapchat", value: "Snapchat" },
-            { label: "TikTok", value: "TikTok" },
-          ]}
-        />
+        <span style={{ fontSize: 13, fontWeight: 500 }}>{selectedPlatform}</span>
       </div>
       <Select
         mode="multiple"

@@ -9,10 +9,16 @@ interface Props {
   tempTargetFieldId?: string;
   tempOperationMode?: "add" | "overwrite" | "fillEmpty";
   tempSelectFieldId?: string;
+  tempPlatform?: string;
   onSelectFieldChange?: (fieldId: string) => void;
   onClose: () => void;
-  onConfirm: (recordId: string, fieldId: string, mode: "add" | "overwrite" | "fillEmpty", selectFieldId: string) => void;
+  onConfirm: (recordId: string, fieldId: string, mode: "add" | "overwrite" | "fillEmpty", selectFieldId: string, platform: string) => void;
 }
+
+const PLATFORM_OPTIONS = [
+  { label: "Snapchat", value: "Snapchat" },
+  { label: "TikTok", value: "TikTok" },
+];
 
 export default function SettingsDrawer({
   visible,
@@ -22,6 +28,7 @@ export default function SettingsDrawer({
   tempTargetFieldId,
   tempOperationMode = "add",
   tempSelectFieldId,
+  tempPlatform = "Snapchat",
   onSelectFieldChange,
   onClose,
   onConfirm,
@@ -30,6 +37,7 @@ export default function SettingsDrawer({
   const [targetFieldId, setTargetFieldId] = useState<string | undefined>(tempTargetFieldId);
   const [operationMode, setOperationMode] = useState<"add" | "overwrite" | "fillEmpty">(tempOperationMode);
   const [selectFieldId, setSelectFieldId] = useState<string | undefined>(tempSelectFieldId);
+  const [platform, setPlatform] = useState<string>(tempPlatform);
 
   // 当外部重新打开时同步初始值
   useEffect(() => {
@@ -38,16 +46,16 @@ export default function SettingsDrawer({
       setTargetFieldId(tempTargetFieldId);
       setOperationMode(tempOperationMode);
       setSelectFieldId(tempSelectFieldId);
+      setPlatform(tempPlatform);
     }
-  }, [visible, tempRecordId, tempTargetFieldId, tempOperationMode, tempSelectFieldId]);
+  }, [visible, tempRecordId, tempTargetFieldId, tempOperationMode, tempSelectFieldId, tempPlatform]);
 
   const handleConfirm = () => {
     if (operationMode === "add" && (!recordId || !targetFieldId)) {
       return message.error("请选择源记录或写入列");
     }
-    onConfirm(recordId || "", targetFieldId || "", operationMode, selectFieldId || "");
+    onConfirm(recordId || "", targetFieldId || "", operationMode, selectFieldId || "", platform);
   };
-
 
   return (
     <Modal
@@ -67,6 +75,17 @@ export default function SettingsDrawer({
       }
     >
       <Form layout="horizontal" colon={false}>
+        <Form.Item label="媒体平台">
+          <Select
+            value={platform}
+            options={PLATFORM_OPTIONS}
+            onChange={(v) => {
+              setPlatform(v);
+              setSelectFieldId(undefined);
+              setRecordId(undefined);
+            }}
+          />
+        </Form.Item>
         <Form.Item label="账户列">
           <Select
             showSearch
@@ -80,7 +99,6 @@ export default function SettingsDrawer({
             }}
           />
         </Form.Item>
-        {/* ✅ 新增：操作模式选择 */}
         <Form.Item label="操作模式">
           <Radio.Group
             value={operationMode}
@@ -100,7 +118,6 @@ export default function SettingsDrawer({
             onChange={setRecordId}
           />
         </Form.Item>
-
         <Form.Item label="写入列">
           <Select
             showSearch
@@ -110,8 +127,6 @@ export default function SettingsDrawer({
             onChange={setTargetFieldId}
           />
         </Form.Item>
-
-
       </Form>
     </Modal>
   );
