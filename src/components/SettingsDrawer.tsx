@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Drawer, Form, Select, Button, message, Radio } from "antd";
+import { Modal, Form, Select, Button, message, Radio } from "antd";
 
 interface Props {
   visible: boolean;
@@ -50,11 +50,10 @@ export default function SettingsDrawer({
 
 
   return (
-    <Drawer
+    <Modal
       title="设置"
-      placement="right"
-      width={380}
-      onClose={onClose}
+      width={480}
+      onCancel={onClose}
       open={visible}
       footer={
         <div style={{ textAlign: "right" }}>
@@ -113,6 +112,6 @@ export default function SettingsDrawer({
 
 
       </Form>
-    </Drawer>
+    </Modal>
   );
 }
