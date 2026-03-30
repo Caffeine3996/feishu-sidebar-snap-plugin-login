@@ -75,6 +75,7 @@ export default function SettingsDrawer({
             options={fieldMetaList.map((f) => ({ label: f.name, value: f.id }))}
             onChange={(id) => {
               setSelectFieldId(id);
+              setRecordId(undefined);
               onSelectFieldChange?.(id);
             }}
           />
