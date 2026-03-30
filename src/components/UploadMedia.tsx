@@ -107,6 +107,10 @@ export default function UploadMedia({
     }
   }, [customerList, fallbackCustomerId]);
 
+  useEffect(() => {
+    setSelectedCustomers([]);
+  }, [platform]);
+
   const effectiveCustomers = selectedCustomers.length > 0
     ? selectedCustomers
     : fallbackCustomerId ? [fallbackCustomerId] : [];
