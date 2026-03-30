@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Button, Pagination, message, Modal, Tabs, Spin } from "antd";
 import { ReloadOutlined } from "@ant-design/icons";
 import styles from "./index.module.css";
@@ -32,8 +32,12 @@ function LoadApp() {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [uploadVisible, setUploadVisible] = useState(false);
 
+  // 初始设置检测：fieldMetaList 首次加载后只触发一次
+  const initialSettingsChecked = useRef(false);
+
   // 本地配置
   const {
+    savedSelectFieldId,
     selectedRecordId,
     targetFieldId,
     operationMode,
@@ -83,6 +87,21 @@ function LoadApp() {
       setSelectedValue(undefined);
     }
   }, [fieldValues]);
+
+  // fieldMetaList 首次就绪后：恢复 selectFieldId 并检测设置是否完整
+  useEffect(() => {
+    if (fieldMetaList.length === 0 || initialSettingsChecked.current) return;
+    initialSettingsChecked.current = true;
+
+    if (savedSelectFieldId && !selectFieldId) {
+      setSelectFieldId(savedSelectFieldId);
+    }
+
+    const hasSelectField = savedSelectFieldId || selectFieldId;
+    if (!hasSelectField || !targetFieldId) {
+      setSettingsVisible(true);
+    }
+  }, [fieldMetaList]);
 
   // userInfo 就绪后获取客户素材列表
   useEffect(() => {
@@ -244,11 +263,11 @@ function LoadApp() {
         tempRecordId={selectedRecordId}
         tempTargetFieldId={targetFieldId}
         tempOperationMode={operationMode}
-        tempSelectFieldId={selectFieldId}
+        tempSelectFieldId={selectFieldId ?? savedSelectFieldId}
         onSelectFieldChange={fetchRecordsByField}
         onClose={() => setSettingsVisible(false)}
         onConfirm={(recordId, fieldId, mode, newSelectFieldId) => {
-          saveConfig(recordId, fieldId, mode);
+          saveConfig(newSelectFieldId, recordId, fieldId, mode);
           if (newSelectFieldId !== selectFieldId) {
             setSelectFieldId(newSelectFieldId);
             setSelectedValue(undefined);

@@ -43,7 +43,7 @@ export default function SettingsDrawer({
 
   const handleConfirm = () => {
     if (operationMode === "add" && (!recordId || !targetFieldId)) {
-      return message.error("请选择源记录和写入列");
+      return message.error("请选择源记录或写入列");
     }
     onConfirm(recordId || "", targetFieldId || "", operationMode, selectFieldId || "");
   };
