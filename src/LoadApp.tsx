@@ -124,11 +124,15 @@ function LoadApp() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (selectedValue && selectFieldId) {
-        fetchSnap(1, pageSize, selectedValue, undefined, keyword);
+        if (platform === "TTD") {
+          fetchTTD(1, ttdPageSize, selectedValue);
+        } else {
+          fetchSnap(1, pageSize, selectedValue, undefined, keyword);
+        }
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [keyword, selectedValue, selectFieldId, pageSize]);
+  }, [keyword, selectedValue, selectFieldId, pageSize, platform]);
 
   const handlePreview = (item: { name?: string; f_name?: string; f_path: string }) => {
     const name = item.name ?? item.f_name ?? "";
