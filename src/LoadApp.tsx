@@ -332,7 +332,14 @@ function LoadApp() {
           if (newSelectFieldId !== selectFieldId) {
             setSelectFieldId(newSelectFieldId);
             setSelectedValue(undefined);
+          } else {
+            if (newPlatform === "TTD") {
+              fetchTTD(1, ttdPageSize);
+            } else if (selectedValue) {
+              fetchSnap(1, pageSize, selectedValue);
+            }
           }
+          fetchAll(1, pageSizeAll);
           fetchCustomerMedia(newPlatform);
           setCustomerResetKey((k) => k + 1);
           setSettingsVisible(false);
