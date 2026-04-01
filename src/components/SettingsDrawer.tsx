@@ -50,6 +50,9 @@ export default function SettingsDrawer({
   }, [visible, tempRecordId, tempTargetFieldId, tempOperationMode, tempSelectFieldId, tempPlatform]);
 
   const handleConfirm = () => {
+    if (!platform) {
+      return message.error("请选择媒体平台");
+    }
     if (operationMode === "add" && (!recordId || !targetFieldId)) {
       return message.error("请选择源记录或写入列");
     }

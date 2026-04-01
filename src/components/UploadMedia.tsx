@@ -53,6 +53,7 @@ interface Props {
   customerList: CustomerItem[];
   fallbackCustomerId?: string;
   platform: string;
+  resetKey?: number;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -93,6 +94,7 @@ export default function UploadMedia({
   customerList,
   fallbackCustomerId,
   platform,
+  resetKey,
   onClose,
   onSuccess,
 }: Props) {
@@ -109,7 +111,7 @@ export default function UploadMedia({
 
   useEffect(() => {
     setSelectedCustomers([]);
-  }, [platform]);
+  }, [platform, resetKey]);
 
   const effectiveCustomers = selectedCustomers.length > 0
     ? selectedCustomers

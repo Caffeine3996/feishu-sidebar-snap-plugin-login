@@ -16,7 +16,7 @@ export function useCustomerMedia(userInfo: UserInfo | null): CustomerMediaResult
   const [customerList, setCustomerList] = useState<CustomerItem[]>([]);
 
   const fetchCustomerMedia = useCallback(
-    async (platform: string = "Snapchat", searchKeyword: string = "") => {
+    async (platform: string = "", searchKeyword: string = "") => {
       const agencyId = userInfo?.agency_ids;
       if (!agencyId) return;
       try {

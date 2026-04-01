@@ -33,6 +33,7 @@ function LoadApp() {
   const [previewContent, setPreviewContent] = useState<PreviewContent | null>(null);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [uploadVisible, setUploadVisible] = useState(false);
+  const [customerResetKey, setCustomerResetKey] = useState(0);
 
   // 初始设置检测：fieldMetaList 首次加载后只触发一次
   const initialSettingsChecked = useRef(false);
@@ -309,6 +310,7 @@ function LoadApp() {
         customerList={customerList}
         fallbackCustomerId={selectedValue}
         platform={platform}
+        resetKey={customerResetKey}
         onClose={() => setUploadVisible(false)}
         onSuccess={() => {
           setUploadVisible(false);
@@ -331,9 +333,8 @@ function LoadApp() {
             setSelectFieldId(newSelectFieldId);
             setSelectedValue(undefined);
           }
-          if (newPlatform !== platform) {
-            fetchCustomerMedia(newPlatform);
-          }
+          fetchCustomerMedia(newPlatform);
+          setCustomerResetKey((k) => k + 1);
           setSettingsVisible(false);
         }}
       />
