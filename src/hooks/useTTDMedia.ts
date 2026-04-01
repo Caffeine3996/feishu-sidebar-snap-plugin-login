@@ -28,9 +28,10 @@ export function useTTDMedia(customerId: string | undefined): TTDMediaResult {
       setTTDLoading(true);
       try {
         const res = await fetch(
-          `https://new.inmad.cn/controller/ttd/feishu_api.php?op=get_generate_creative`,
+          `/controller/ttd/feishu_api.php?op=get_generate_creative`,
           {
             method: "POST",
+            credentials: "include",
             body: new URLSearchParams({
               customer_id: currentCustomerId,
               type: "3",
