@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST \"https://new.inmad.cn/controller/ttd/feishu_api.php?op=get_generate_creative\" -d \"customer_id=kmtl5kn&type=3&page=1&page_size=5\")"
+    ]
+  }
+}

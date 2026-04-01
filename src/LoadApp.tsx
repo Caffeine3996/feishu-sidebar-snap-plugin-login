@@ -15,6 +15,8 @@ import { useSnapMedia } from "./hooks/useSnapMedia";
 import { useAllMedia } from "./hooks/useAllMedia";
 import { useCustomerMedia } from "./hooks/useCustomerMedia";
 import { useTableWrite } from "./hooks/useTableWrite";
+import { useTTDMedia } from "./hooks/useTTDMedia";
+import TTDMediaGrid from "./components/TTDMediaGrid";
 
 interface PreviewContent {
   type: "video" | "image";
@@ -25,7 +27,7 @@ interface PreviewContent {
 function LoadApp() {
   const [selectedValue, setSelectedValue] = useState<string | undefined>();
   const [keyword, setKeyword] = useState("");
-  const [activeTab, setActiveTab] = useState<"snap" | "all">("snap");
+  const [activeTab, setActiveTab] = useState<"snap" | "all" | "ttd">("snap");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewContent, setPreviewContent] = useState<PreviewContent | null>(null);
@@ -44,6 +46,11 @@ function LoadApp() {
     platform,
     saveConfig,
   } = useLocalConfig();
+
+  // platform 变化时切换到对应的媒体 tab
+  useEffect(() => {
+    setActiveTab(platform === "TTD" ? "ttd" : "snap");
+  }, [platform]);
 
   // bitable 初始化
   const { fieldMetaList, fieldValues, recordList, selectFieldId, setSelectFieldId, fetchRecordsByField } =
@@ -70,6 +77,7 @@ function LoadApp() {
   const { apiDataList, page, pageSize, total, loading, fetchSnap } = useSnapMedia(selectedValue, ssid);
   const { apiDataListAll, pageAll, pageSizeAll, totalAll, loadingAll, fetchAll } = useAllMedia(ssid);
   const { customerList, fetchCustomerMedia } = useCustomerMedia(userInfo);
+  const { ttdDataList, ttdPage, ttdPageSize, ttdTotal, ttdLoading, fetchTTD } = useTTDMedia(selectedValue);
 
   // 写入表格
   const { writeToTable } = useTableWrite({
@@ -147,9 +155,12 @@ function LoadApp() {
         <Tabs
           activeKey={activeTab}
           onChange={(key) => {
-            setActiveTab(key as "snap" | "all");
+            setActiveTab(key as "snap" | "all" | "ttd");
             if (key === "all" && apiDataListAll.length === 0) {
               fetchAll(1, pageSizeAll);
+            }
+            if (key === "ttd" && ttdDataList.length === 0) {
+              fetchTTD(1, ttdPageSize);
             }
           }}
           tabBarExtraContent={
@@ -158,32 +169,34 @@ function LoadApp() {
               onClick={() => {
                 if (activeTab === "snap") {
                   fetchSnap(1, pageSize, selectedValue);
+                } else if (activeTab === "ttd") {
+                  fetchTTD(1, ttdPageSize);
                 } else {
                   fetchAll(1, pageSizeAll);
                 }
               }}
             />
           }
-          items={[
-            {
+          items={([
+            platform !== "TTD" && {
               key: "snap",
               label: "媒体素材",
               children: (
                 <div className={styles.tabContent}>
-                <div className={styles.tabScrollArea}>
+                  <div className={styles.tabScrollArea}>
                     <Spin spinning={loading}>
                       <MediaGrid
-                      dataList={apiDataList}
-                      selectedIds={selectedIds}
-                      onToggleSelect={(name: string, checked: boolean) =>
-                        setSelectedIds((prev) => {
-                          const s = new Set(prev);
-                          checked ? s.add(name) : s.delete(name);
-                          return s;
-                        })
-                      }
-                      onPreview={(item: { name: string; f_path: string }) => handlePreview(item)}
-                    />
+                        dataList={apiDataList}
+                        selectedIds={selectedIds}
+                        onToggleSelect={(name: string, checked: boolean) =>
+                          setSelectedIds((prev) => {
+                            const s = new Set(prev);
+                            checked ? s.add(name) : s.delete(name);
+                            return s;
+                          })
+                        }
+                        onPreview={(item: { name: string; f_path: string }) => handlePreview(item)}
+                      />
                     </Spin>
                   </div>
                   {apiDataList.length > 0 && (
@@ -204,6 +217,33 @@ function LoadApp() {
                       >
                         写入选中数据到表格
                       </Button>
+                    </div>
+                  )}
+                </div>
+              ),
+            },
+            platform === "TTD" && {
+              key: "ttd",
+              label: "媒体素材",
+              children: (
+                <div className={styles.tabContent}>
+                  <div className={styles.tabScrollArea}>
+                    <Spin spinning={ttdLoading}>
+                      <TTDMediaGrid
+                        dataList={ttdDataList}
+                        onPreview={(item: { f_name: string; f_path: string }) => handlePreview(item)}
+                      />
+                    </Spin>
+                  </div>
+                  {ttdDataList.length > 0 && (
+                    <div className={styles.footer}>
+                      <Pagination
+                        current={ttdPage}
+                        pageSize={ttdPageSize}
+                        total={ttdTotal}
+                        showSizeChanger
+                        onChange={(p, size) => fetchTTD(p, size)}
+                      />
                     </div>
                   )}
                 </div>
@@ -236,7 +276,8 @@ function LoadApp() {
                 </div>
               ),
             },
-          ]}
+
+          ]).filter(Boolean) as any[]}
         />
       </div>
 
@@ -283,7 +324,7 @@ function LoadApp() {
       <Modal
         open={loginModalVisible}
         closable={false}
-        maskClosable={false} 
+        maskClosable={false}
         footer={null}
         centered
         title="需要登录"
