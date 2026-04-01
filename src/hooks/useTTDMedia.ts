@@ -34,7 +34,6 @@ export function useTTDMedia(customerId: string | undefined): TTDMediaResult {
             credentials: "include",
             body: new URLSearchParams({
               customer_id: currentCustomerId,
-              type: "3",
               page: String(pageNum),
               page_size: String(pageSizeNum),
             }),
