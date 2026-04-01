@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>登录检测</title>
+</head>
+<body>
+
+<!-- 隐藏 iframe，用于跨域读取 bf.show 的 cookie -->
+<iframe
+  id="loginBridge"
+  src="https://bf.show/feishu/plugin/snap_login/bridge.html"
+  style="display:none"
+></iframe>
+
+<script>
+  const IS_LOGIN_URL = "https://new.inmad.cn/inc/is_login.php";
+  const iframe = document.getElementById("loginBridge");
+
+  // 1. iframe 加载完成后，向它发消息请求 cookie
+  iframe.addEventListener("load", function () {
+    requestUserInfo();
+  });
+
+  function requestUserInfo() {
+    iframe.contentWindow.postMessage(
+      { type: "GET_COOKIE", key: "inmad_user_info" },
+      "https://bf.show"
+    );
+  }
+
+  // 2. 监听 iframe 返回的 cookie 结果
+  window.addEventListener("message", function (event) {
+    if (event.origin !== "https://bf.show") return;
+
+    var msg = event.data;
+    if (msg.type !== "COOKIE_RESULT") return;
+
+    var ssid = msg.data || "";
+    checkIsLogin(ssid);
+  });
+
+  // 3. 用 ssid 调接口验证登录状态
+  function checkIsLogin(ssid) {
+    if (!ssid) {
+      onNotLoggedIn();
+      return;
+    }
+
+    fetch(IS_LOGIN_URL + "?ssid=" + encodeURIComponent(ssid))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.code === 200 && data.userinfo) {
+          onLoggedIn(ssid, data.userinfo);
+        } else {
+          onNotLoggedIn();
+        }
+      })
+      .catch(function () {
+        onNotLoggedIn();
+      });
+  }
+
+  // ── 登录成功 ──────────────────────────────────────────
+  function onLoggedIn(ssid, userInfo) {
+    console.log("登录成功", { ssid: ssid, userInfo: userInfo });
+    // TODO: 在这里写你的业务逻辑
+    // 例如：window.parent.postMessage({ type: "LOGIN_SUCCESS", ssid, userInfo }, "*");
+  }
+
+  // ── 未登录 ────────────────────────────────────────────
+  function onNotLoggedIn() {
+    console.warn("未检测到登录信息，请先前往 https://bf.show 登录");
+    // TODO: 在这里处理未登录的情况
+    // 例如：展示提示，或跳转登录页
+  }
+</script>
+</body>
+</html>
