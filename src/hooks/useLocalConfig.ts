@@ -16,7 +16,7 @@ export function useLocalConfig(): LocalConfig {
   const [selectedRecordId, setSelectedRecordId] = useState<string | undefined>();
   const [targetFieldId, setTargetFieldId] = useState<string | undefined>();
   const [operationMode, setOperationMode] = useState<OperationMode>("add");
-  const [platform, setPlatform] = useState<string>("Snapchat");
+  const [platform, setPlatform] = useState<string>("");
 
   useEffect(() => {
     const saved = localStorage.getItem("mediaWriterConfig");
@@ -27,7 +27,7 @@ export function useLocalConfig(): LocalConfig {
       setSelectedRecordId(parsed.recordId);
       setTargetFieldId(parsed.fieldId);
       setOperationMode(parsed.operationMode || "add");
-      setPlatform(parsed.platform || "Snapchat");
+      setPlatform(parsed.platform || "");
     } catch (err) {
       console.warn("读取本地配置失败：", err);
     }

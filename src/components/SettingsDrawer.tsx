@@ -28,7 +28,7 @@ export default function SettingsDrawer({
   tempTargetFieldId,
   tempOperationMode = "add",
   tempSelectFieldId,
-  tempPlatform = "Snapchat",
+  tempPlatform = "",
   onSelectFieldChange,
   onConfirm,
 }: Props) {
