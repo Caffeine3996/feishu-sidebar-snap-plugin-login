@@ -231,6 +231,14 @@ function LoadApp() {
                     <Spin spinning={ttdLoading}>
                       <TTDMediaGrid
                         dataList={ttdDataList}
+                        selectedIds={selectedIds}
+                        onToggleSelect={(id: string, checked: boolean) =>
+                          setSelectedIds((prev) => {
+                            const s = new Set(prev);
+                            checked ? s.add(id) : s.delete(id);
+                            return s;
+                          })
+                        }
                         onPreview={(item: { f_name: string; f_path: string }) => handlePreview(item)}
                       />
                     </Spin>
@@ -244,6 +252,15 @@ function LoadApp() {
                         showSizeChanger
                         onChange={(p, size) => fetchTTD(p, size)}
                       />
+                      <Button
+                        type="primary"
+                        onClick={() => {
+                          if (selectedIds.size === 0) return message.warning("请选择素材");
+                          writeToTable(Array.from(selectedIds).map((id) => ({ f_name: id })));
+                        }}
+                      >
+                        写入选中数据到表格
+                      </Button>
                     </div>
                   )}
                 </div>
