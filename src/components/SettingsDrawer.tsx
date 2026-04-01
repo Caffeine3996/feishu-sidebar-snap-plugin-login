@@ -17,6 +17,7 @@ interface Props {
 const PLATFORM_OPTIONS = [
   { label: "Snapchat", value: "Snapchat" },
   { label: "TikTok", value: "TikTok" },
+  { label: "TTD", value: "TTD" },
 ];
 
 export default function SettingsDrawer({
