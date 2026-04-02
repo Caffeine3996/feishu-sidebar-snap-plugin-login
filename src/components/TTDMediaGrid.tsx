@@ -15,10 +15,10 @@ export default function TTDMediaGrid({ dataList, selectedIds, onToggleSelect, on
     <div className={styles.scrollArea}>
       <div className={styles.gridContainer}>
         {dataList.map((item: any, idx: number) => {
-          const path = item.url ?? item.f_path ?? "";
-          const thumb = item.thumbnail_url ?? item.f_thumbnail ?? path;
+      
+          const thumb = item.f_thumbnail;
           const name = item.file_name ?? item.name ?? item.creative_name ?? item.f_name ?? "";
-          const isVideo = isVideoPath(path) || isVideoPath(name);
+          const isVideo = isVideoPath(name);
           const mediaId = item.media_id ?? item.id ?? String(idx);
           return (
             <div key={mediaId} className={`${styles.card} ${selectedIds?.has(mediaId) ? styles.cardSelected : ""}`}>
@@ -46,7 +46,7 @@ export default function TTDMediaGrid({ dataList, selectedIds, onToggleSelect, on
               ) : (
                 <>
                   <img
-                    src={path}
+                    src={thumb}
                     alt={name}
                     className={styles.img}
                     onError={(e) => {
@@ -61,7 +61,7 @@ export default function TTDMediaGrid({ dataList, selectedIds, onToggleSelect, on
               )}
               <PlayCircleOutlined
                 className={styles.playIcon}
-                onClick={() => onPreview({ f_path: path, f_name: name })}
+                onClick={() => onPreview({ f_path: thumb, f_name: name })}
               />
               <div className={styles.nameInfo}>
                 <Tooltip title={name}>
