@@ -38,7 +38,7 @@ export function useSnapMedia(
       if (!accountValue || !currentSsid) return;
       setLoading(true);
       try {
-        const res = await fetch(`https://new.inmad.cn/feishu_interface/feishu_snapchat_media.php?`, {
+        const res = await fetch(`https://bf.show/feishu_interface/feishu_snapchat_media.php?`, {
           method: "POST",
           body: new URLSearchParams({
             page: String(pageNum),

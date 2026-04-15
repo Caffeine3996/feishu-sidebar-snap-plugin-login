@@ -13,7 +13,7 @@ import SparkMD5 from "spark-md5";
 
 const { Dragger } = Upload;
 
-const BASE_URL = "https://new.inmad.cn";
+const BASE_URL = "https://bf.show";
 const UPLOAD_URL = "https://upload.inmad.cn/controller/disk/manage_media_file.php";
 const CHECK_URL = `${BASE_URL}/controller/disk/manage_media_file.php?type=check`;
 const INSERT_URL = `${BASE_URL}/controller/disk/manage_media_file.php?type=insert`;
