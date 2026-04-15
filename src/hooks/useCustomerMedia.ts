@@ -9,14 +9,14 @@ interface CustomerItem {
 
 interface CustomerMediaResult {
   customerList: CustomerItem[];
-  fetchCustomerMedia: (platform?: string, searchKeyword?: string) => Promise<void>;
+  fetchCustomerMedia: (searchKeyword?: string) => Promise<void>;
 }
 
-export function useCustomerMedia(userInfo: UserInfo | null): CustomerMediaResult {
+export function useCustomerMedia(userInfo: UserInfo | null, platform: string): CustomerMediaResult {
   const [customerList, setCustomerList] = useState<CustomerItem[]>([]);
 
   const fetchCustomerMedia = useCallback(
-    async (platform: string = "", searchKeyword: string = "") => {
+    async (searchKeyword: string = "") => {
       const agencyId = userInfo?.agency_ids;
       if (!agencyId) return;
       try {
@@ -37,7 +37,7 @@ export function useCustomerMedia(userInfo: UserInfo | null): CustomerMediaResult
         message.error("获取素材列表失败");
       }
     },
-    [userInfo?.agency_ids]
+    [userInfo?.agency_ids, platform]
   );
 
   return { customerList, fetchCustomerMedia };

@@ -77,7 +77,7 @@ function LoadApp() {
   // 媒体数据
   const { apiDataList, page, pageSize, total, loading, fetchSnap } = useSnapMedia(selectedValue, ssid);
   const { apiDataListAll, pageAll, pageSizeAll, totalAll, loadingAll, fetchAll } = useAllMedia(ssid);
-  const { customerList, fetchCustomerMedia } = useCustomerMedia(userInfo);
+  const { customerList, fetchCustomerMedia } = useCustomerMedia(userInfo, platform);
   const { ttdDataList, ttdPage, ttdPageSize, ttdTotal, ttdLoading, fetchTTD } = useTTDMedia(selectedValue);
 
   // 写入表格
@@ -344,7 +344,7 @@ function LoadApp() {
             }
           }
           fetchAll(1, pageSizeAll);
-          fetchCustomerMedia(newPlatform);
+          fetchCustomerMedia();
           setCustomerResetKey((k) => k + 1);
           setSettingsVisible(false);
         }}
