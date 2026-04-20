@@ -10,6 +10,7 @@ interface TableWriteOptions {
   targetFieldId: string | undefined;
   operationMode: OperationMode;
   selectedIds: Set<string>;
+  multiRecord: boolean;
 }
 
 export function useTableWrite({
@@ -18,6 +19,7 @@ export function useTableWrite({
   targetFieldId,
   operationMode,
   selectedIds,
+  multiRecord,
 }: TableWriteOptions) {
   const findSourceRecordId = async (table: any, field: ITextField, value: string) => {
     const recordIds = await table.getRecordIdList();
@@ -40,18 +42,29 @@ export function useTableWrite({
     const sourceRecord = await table.getRecordById(sourceRecordId);
     const fieldData = sourceRecord.fields || {};
 
-    const newRecords: IRecordValue[] = items.map((i) => {
+    const buildBaseFields = () => {
       const fields: Record<string, any> = {};
       for (const key in fieldData) {
         const value = fieldData[key];
         fields[key] = typeof value === "string" ? { type: "text", text: value } : value;
       }
-      fields[targetFieldId!] = { type: "text", text: i.f_name };
-      return { fields };
-    });
+      return fields;
+    };
 
-    await table.addRecords(newRecords);
-    message.success(`已创建 ${newRecords.length} 条记录`);
+    if (multiRecord) {
+      const newRecords: IRecordValue[] = items.map((i) => {
+        const fields = buildBaseFields();
+        fields[targetFieldId!] = { type: "text", text: i.f_name };
+        return { fields };
+      });
+      await table.addRecords(newRecords);
+      message.success(`已创建 ${newRecords.length} 条记录`);
+    } else {
+      const fields = buildBaseFields();
+      fields[targetFieldId!] = { type: "text", text: items.map((i) => i.f_name).join("\n") };
+      await table.addRecords([{ fields }]);
+      message.success(`已创建 1 条记录（包含 ${items.length} 个素材）`);
+    }
   };
 
   const handleOverwriteMode = async (table: any) => {
@@ -114,7 +127,7 @@ export function useTableWrite({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectFieldId, selectedValue, targetFieldId, operationMode, selectedIds]
+    [selectFieldId, selectedValue, targetFieldId, operationMode, selectedIds, multiRecord]
   );
 
   return { writeToTable };

@@ -8,7 +8,8 @@ interface LocalConfig {
   targetFieldId: string | undefined;
   operationMode: OperationMode;
   platform: string;
-  saveConfig: (selectFieldId: string, recordId: string, fieldId: string, mode: OperationMode, platform: string) => void;
+  multiRecord: boolean;
+  saveConfig: (selectFieldId: string, recordId: string, fieldId: string, mode: OperationMode, platform: string, multiRecord: boolean) => void;
 }
 
 export function useLocalConfig(): LocalConfig {
@@ -17,6 +18,7 @@ export function useLocalConfig(): LocalConfig {
   const [targetFieldId, setTargetFieldId] = useState<string | undefined>();
   const [operationMode, setOperationMode] = useState<OperationMode>("add");
   const [platform, setPlatform] = useState<string>("");
+  const [multiRecord, setMultiRecord] = useState<boolean>(true);
 
   useEffect(() => {
     const saved = localStorage.getItem("mediaWriterConfig");
@@ -28,22 +30,24 @@ export function useLocalConfig(): LocalConfig {
       setTargetFieldId(parsed.fieldId);
       setOperationMode(parsed.operationMode || "add");
       setPlatform(parsed.platform || "");
+      setMultiRecord(parsed.multiRecord !== false);
     } catch (err) {
       console.warn("读取本地配置失败：", err);
     }
   }, []);
 
-  const saveConfig = (selectFieldId: string, recordId: string, fieldId: string, mode: OperationMode, plat: string) => {
+  const saveConfig = (selectFieldId: string, recordId: string, fieldId: string, mode: OperationMode, plat: string, multi: boolean) => {
     setSavedSelectFieldId(selectFieldId);
     setSelectedRecordId(recordId);
     setTargetFieldId(fieldId);
     setOperationMode(mode);
     setPlatform(plat);
+    setMultiRecord(multi);
     localStorage.setItem(
       "mediaWriterConfig",
-      JSON.stringify({ selectFieldId, recordId, fieldId, operationMode: mode, platform: plat })
+      JSON.stringify({ selectFieldId, recordId, fieldId, operationMode: mode, platform: plat, multiRecord: multi })
     );
   };
 
-  return { savedSelectFieldId, selectedRecordId, targetFieldId, operationMode, platform, saveConfig };
+  return { savedSelectFieldId, selectedRecordId, targetFieldId, operationMode, platform, multiRecord, saveConfig };
 }

@@ -45,6 +45,7 @@ function LoadApp() {
     targetFieldId,
     operationMode,
     platform,
+    multiRecord,
     saveConfig,
   } = useLocalConfig();
 
@@ -87,6 +88,7 @@ function LoadApp() {
     targetFieldId,
     operationMode,
     selectedIds,
+    multiRecord,
   });
 
   // 列切换后自动选第一个值（请求由关键字 effect 统一触发）
@@ -330,9 +332,10 @@ function LoadApp() {
         tempOperationMode={operationMode}
         tempSelectFieldId={selectFieldId ?? savedSelectFieldId}
         tempPlatform={platform}
+        tempMultiRecord={multiRecord}
         onSelectFieldChange={fetchRecordsByField}
-        onConfirm={(recordId, fieldId, mode, newSelectFieldId, newPlatform) => {
-          saveConfig(newSelectFieldId, recordId, fieldId, mode, newPlatform);
+        onConfirm={(recordId, fieldId, mode, newSelectFieldId, newPlatform, newMultiRecord) => {
+          saveConfig(newSelectFieldId, recordId, fieldId, mode, newPlatform, newMultiRecord);
           if (newSelectFieldId !== selectFieldId) {
             setSelectFieldId(newSelectFieldId);
             setSelectedValue(undefined);

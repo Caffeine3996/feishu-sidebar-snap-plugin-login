@@ -10,8 +10,9 @@ interface Props {
   tempOperationMode?: "add" | "overwrite" | "fillEmpty";
   tempSelectFieldId?: string;
   tempPlatform?: string;
+  tempMultiRecord?: boolean;
   onSelectFieldChange?: (fieldId: string) => void;
-  onConfirm: (recordId: string, fieldId: string, mode: "add" | "overwrite" | "fillEmpty", selectFieldId: string, platform: string) => void;
+  onConfirm: (recordId: string, fieldId: string, mode: "add" | "overwrite" | "fillEmpty", selectFieldId: string, platform: string, multiRecord: boolean) => void;
 }
 
 const PLATFORM_OPTIONS = [
@@ -29,6 +30,7 @@ export default function SettingsDrawer({
   tempOperationMode = "add",
   tempSelectFieldId,
   tempPlatform = "",
+  tempMultiRecord = true,
   onSelectFieldChange,
   onConfirm,
 }: Props) {
@@ -37,6 +39,7 @@ export default function SettingsDrawer({
   const [operationMode, setOperationMode] = useState<"add" | "overwrite" | "fillEmpty">(tempOperationMode);
   const [selectFieldId, setSelectFieldId] = useState<string | undefined>(tempSelectFieldId);
   const [platform, setPlatform] = useState<string>(tempPlatform);
+  const [multiRecord, setMultiRecord] = useState<boolean>(tempMultiRecord);
 
   // 当外部重新打开时同步初始值
   useEffect(() => {
@@ -46,8 +49,9 @@ export default function SettingsDrawer({
       setOperationMode(tempOperationMode);
       setSelectFieldId(tempSelectFieldId);
       setPlatform(tempPlatform);
+      setMultiRecord(tempMultiRecord);
     }
-  }, [visible, tempRecordId, tempTargetFieldId, tempOperationMode, tempSelectFieldId, tempPlatform]);
+  }, [visible, tempRecordId, tempTargetFieldId, tempOperationMode, tempSelectFieldId, tempPlatform, tempMultiRecord]);
 
   const handleConfirm = () => {
     if (!platform) {
@@ -56,7 +60,7 @@ export default function SettingsDrawer({
     if (operationMode === "add" && (!recordId || !targetFieldId)) {
       return message.error("请选择源记录或写入列");
     }
-    onConfirm(recordId || "", targetFieldId || "", operationMode, selectFieldId || "", platform);
+    onConfirm(recordId || "", targetFieldId || "", operationMode, selectFieldId || "", platform, multiRecord);
   };
 
   return (
@@ -109,6 +113,17 @@ export default function SettingsDrawer({
             <Radio value="fillEmpty">空白补全</Radio>
           </Radio.Group>
         </Form.Item>
+        {operationMode === "add" && (
+          <Form.Item label="写入方式">
+            <Radio.Group
+              value={multiRecord}
+              onChange={(e) => setMultiRecord(e.target.value)}
+            >
+              <Radio value={true}>每个素材创建一条记录</Radio>
+              <Radio value={false}>所有素材合并到一条记录</Radio>
+            </Radio.Group>
+          </Form.Item>
+        )}
         <Form.Item label="源记录">
           <Select
             showSearch
