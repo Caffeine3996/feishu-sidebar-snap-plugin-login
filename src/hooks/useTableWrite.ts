@@ -30,6 +30,16 @@ export function useTableWrite({
     return undefined;
   };
 
+  const READONLY_FIELD_TYPES = new Set<number>([
+    19,    // Lookup
+    20,    // Formula
+    1001,  // CreatedTime
+    1002,  // ModifiedTime
+    1003,  // CreatedUser
+    1004,  // ModifiedUser
+    1005,  // AutoNumber
+  ]);
+
   const handleAddMode = async (table: any, items: { f_name: string }[]) => {
     if (!targetFieldId) return message.error("请选择写入列");
     if (!selectFieldId) return message.error("字段未初始化");
@@ -42,10 +52,19 @@ export function useTableWrite({
     const sourceRecord = await table.getRecordById(sourceRecordId);
     const fieldData = sourceRecord.fields || {};
 
+    const fieldMetaList = await table.getFieldMetaList();
+    const writableIds = new Set<string>(
+      fieldMetaList
+        .filter((f: any) => !READONLY_FIELD_TYPES.has(f.type))
+        .map((f: any) => f.id)
+    );
+
     const buildBaseFields = () => {
       const fields: Record<string, any> = {};
       for (const key in fieldData) {
+        if (!writableIds.has(key)) continue;
         const value = fieldData[key];
+        if (value == null) continue;
         fields[key] = typeof value === "string" ? { type: "text", text: value } : value;
       }
       return fields;
@@ -121,9 +140,9 @@ export function useTableWrite({
           default:
             message.error("未知的操作模式");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        message.error("写入失败");
+        message.error(`写入失败：${err?.message || err}`);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
