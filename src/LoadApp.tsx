@@ -16,6 +16,7 @@ import { useAllMedia } from "./hooks/useAllMedia";
 import { useCustomerMedia } from "./hooks/useCustomerMedia";
 import { useTableWrite } from "./hooks/useTableWrite";
 import { useTTDMedia } from "./hooks/useTTDMedia";
+import { useTikTokMedia } from "./hooks/useTikTokMedia";
 import TTDMediaGrid from "./components/TTDMediaGrid";
 
 interface PreviewContent {
@@ -27,7 +28,7 @@ interface PreviewContent {
 function LoadApp() {
   const [selectedValue, setSelectedValue] = useState<string | undefined>();
   const [keyword, setKeyword] = useState("");
-  const [activeTab, setActiveTab] = useState<"snap" | "all" | "ttd">("snap");
+  const [activeTab, setActiveTab] = useState<"snap" | "all" | "ttd" | "tiktok">("snap");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewContent, setPreviewContent] = useState<PreviewContent | null>(null);
@@ -51,7 +52,9 @@ function LoadApp() {
 
   // platform 变化时切换到对应的媒体 tab
   useEffect(() => {
-    setActiveTab(platform === "TTD" ? "ttd" : "snap");
+    if (platform === "TTD") setActiveTab("ttd");
+    else if (platform === "TikTok") setActiveTab("tiktok");
+    else setActiveTab("snap");
   }, [platform]);
 
   // bitable 初始化
@@ -80,6 +83,7 @@ function LoadApp() {
   const { apiDataListAll, pageAll, pageSizeAll, totalAll, loadingAll, fetchAll } = useAllMedia(ssid);
   const { customerList, fetchCustomerMedia } = useCustomerMedia(userInfo, platform);
   const { ttdDataList, ttdPage, ttdPageSize, ttdTotal, ttdLoading, fetchTTD } = useTTDMedia(selectedValue);
+  const { tiktokDataList, tiktokPage, tiktokPageSize, tiktokTotal, tiktokLoading, fetchTikTok } = useTikTokMedia(selectedValue);
 
   // 写入表格
   const { writeToTable } = useTableWrite({
@@ -128,6 +132,8 @@ function LoadApp() {
       if (selectedValue && selectFieldId) {
         if (platform === "TTD") {
           fetchTTD(1, ttdPageSize, selectedValue);
+        } else if (platform === "TikTok") {
+          fetchTikTok(1, tiktokPageSize, selectedValue, keyword);
         } else {
           fetchSnap(1, pageSize, selectedValue, undefined, keyword);
         }
@@ -162,12 +168,15 @@ function LoadApp() {
         <Tabs
           activeKey={activeTab}
           onChange={(key) => {
-            setActiveTab(key as "snap" | "all" | "ttd");
+            setActiveTab(key as "snap" | "all" | "ttd" | "tiktok");
             if (key === "all" && apiDataListAll.length === 0) {
               fetchAll(1, pageSizeAll);
             }
             if (key === "ttd" && ttdDataList.length === 0) {
               fetchTTD(1, ttdPageSize);
+            }
+            if (key === "tiktok" && tiktokDataList.length === 0) {
+              fetchTikTok(1, tiktokPageSize, selectedValue, keyword);
             }
           }}
           tabBarExtraContent={
@@ -178,6 +187,8 @@ function LoadApp() {
                   fetchSnap(1, pageSize, selectedValue);
                 } else if (activeTab === "ttd") {
                   fetchTTD(1, ttdPageSize);
+                } else if (activeTab === "tiktok") {
+                  fetchTikTok(1, tiktokPageSize, selectedValue, keyword);
                 } else {
                   fetchAll(1, pageSizeAll);
                 }
@@ -185,7 +196,7 @@ function LoadApp() {
             />
           }
           items={([
-            platform !== "TTD" && {
+            platform !== "TTD" && platform !== "TikTok" && {
               key: "snap",
               label: "媒体素材",
               children: (
@@ -273,6 +284,50 @@ function LoadApp() {
                 </div>
               ),
             },
+            platform === "TikTok" && {
+              key: "tiktok",
+              label: "媒体素材",
+              children: (
+                <div className={styles.tabContent}>
+                  <div className={styles.tabScrollArea}>
+                    <Spin spinning={tiktokLoading}>
+                      <TTDMediaGrid
+                        dataList={tiktokDataList}
+                        selectedIds={selectedIds}
+                        onToggleSelect={(id: string, checked: boolean) =>
+                          setSelectedIds((prev) => {
+                            const s = new Set(prev);
+                            checked ? s.add(id) : s.delete(id);
+                            return s;
+                          })
+                        }
+                        onPreview={(item: { f_name: string; f_path: string }) => handlePreview(item)}
+                      />
+                    </Spin>
+                  </div>
+                  {tiktokDataList.length > 0 && (
+                    <div className={styles.footer}>
+                      <Pagination
+                        current={tiktokPage}
+                        pageSize={tiktokPageSize}
+                        total={tiktokTotal}
+                        showSizeChanger
+                        onChange={(p, size) => fetchTikTok(p, size, selectedValue, keyword)}
+                      />
+                      <Button
+                        type="primary"
+                        onClick={() => {
+                          if (selectedIds.size === 0) return message.warning("请选择素材");
+                          writeToTable(Array.from(selectedIds).map((id) => ({ f_name: id })));
+                        }}
+                      >
+                        写入选中数据到表格
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ),
+            },
             {
               key: "all",
               label: "亿帆素材",
@@ -342,6 +397,8 @@ function LoadApp() {
           } else {
             if (newPlatform === "TTD") {
               fetchTTD(1, ttdPageSize);
+            } else if (newPlatform === "TikTok" && selectedValue) {
+              fetchTikTok(1, tiktokPageSize, selectedValue, keyword);
             } else if (selectedValue) {
               fetchSnap(1, pageSize, selectedValue);
             }
