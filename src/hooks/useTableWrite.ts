@@ -80,7 +80,7 @@ export function useTableWrite({
       message.success(`已创建 ${newRecords.length} 条记录`);
     } else {
       const fields = buildBaseFields();
-      fields[targetFieldId!] = { type: "text", text: items.map((i) => i.f_name).join("\n") };
+      fields[targetFieldId!] = { type: "text", text: items.map((i) => i.f_name).join(",") };
       await table.addRecords([{ fields }]);
       message.success(`已创建 1 条记录（包含 ${items.length} 个素材）`);
     }
