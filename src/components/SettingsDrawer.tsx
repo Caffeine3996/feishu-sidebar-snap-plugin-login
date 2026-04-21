@@ -113,14 +113,14 @@ export default function SettingsDrawer({
             <Radio value="fillEmpty">空白补全</Radio>
           </Radio.Group>
         </Form.Item>
-        {operationMode === "add" && (
+        {(operationMode === "add" || operationMode === "overwrite") && (
           <Form.Item label="写入方式">
             <Radio.Group
               value={multiRecord}
               onChange={(e) => setMultiRecord(e.target.value)}
             >
-              <Radio value={true}>每个素材创建一条记录</Radio>
-              <Radio value={false}>所有素材合并到一条记录</Radio>
+              <Radio value={true}>素材独立写入</Radio>
+              <Radio value={false}>所有素材合并到一条</Radio>
             </Radio.Group>
           </Form.Item>
         )}

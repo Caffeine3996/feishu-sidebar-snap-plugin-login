@@ -92,10 +92,16 @@ export function useTableWrite({
       return message.error("请先在表格中选中一个单元格");
     }
     const textField = await table.getField(selection.fieldId);
-    const firstSelected = Array.from(selectedIds)[0];
-    if (!firstSelected) return message.warning("请选择素材");
-    await textField.setValue(selection.recordId, firstSelected);
-    message.success("已覆盖选中素材");
+    const selectedArray = Array.from(selectedIds);
+    if (selectedArray.length === 0) return message.warning("请选择素材");
+
+    if (multiRecord) {
+      await textField.setValue(selection.recordId, selectedArray[0]);
+      message.success("已覆盖选中素材");
+    } else {
+      await textField.setValue(selection.recordId, selectedArray.join(","));
+      message.success(`已覆盖（包含 ${selectedArray.length} 个素材）`);
+    }
   };
 
   const handleFillEmptyMode = async (table: any) => {
