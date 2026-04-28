@@ -22,10 +22,11 @@ export function useTableWrite({
   multiRecord,
 }: TableWriteOptions) {
   const findSourceRecordId = async (table: any, field: ITextField, value: string) => {
+    const target = (value ?? "").trim();
     const recordIds = await table.getRecordIdList();
     for (const id of recordIds) {
       const val = await field.getValue(id);
-      if (Array.isArray(val) && val[0]?.text === value) return id;
+      if (Array.isArray(val) && val[0]?.text?.trim() === target) return id;
     }
     return undefined;
   };
