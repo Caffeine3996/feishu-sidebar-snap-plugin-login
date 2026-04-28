@@ -21,6 +21,18 @@ const PLATFORM_OPTIONS = [
   { label: "TTD", value: "TTD" },
 ];
 
+function dedupRecordList(list: { id: string; name: string }[]) {
+  const seen = new Set<string>();
+  const result: { id: string; name: string }[] = [];
+  for (const r of list) {
+    const key = (r.name ?? "").trim();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(r);
+  }
+  return result;
+}
+
 export default function SettingsDrawer({
   visible,
   recordList,
@@ -129,7 +141,7 @@ export default function SettingsDrawer({
             showSearch
             placeholder="请选择源记录"
             value={recordId}
-            options={recordList.map((r) => ({ label: r.name, value: r.id }))}
+            options={dedupRecordList(recordList).map((r) => ({ label: r.name, value: r.id }))}
             onChange={setRecordId}
           />
         </Form.Item>
