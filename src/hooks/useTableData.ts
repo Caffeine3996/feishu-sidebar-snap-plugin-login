@@ -21,14 +21,16 @@ interface TableDataResult {
 }
 
 const getCellText = (cell: any): string => {
+  if (cell == null) return "";
   if (Array.isArray(cell)) {
     const first = cell[0];
-    if (typeof first === "object" && first !== null && "text" in first) {
-      return first.text;
+    if (first == null) return "";
+    if (typeof first === "object" && "text" in first) {
+      return first.text ?? "";
     }
     return String(first);
   }
-  return String(cell ?? "");
+  return String(cell);
 };
 
 export function useTableData(): TableDataResult {
@@ -72,10 +74,12 @@ export function useTableData(): TableDataResult {
       const options = Array.from(new Set(values)).sort().map((v) => ({ label: v, value: v }));
       setFieldValues(options);
 
-      const recordOptions: RecordOption[] = records.map((record: any, i: number) => {
+      const recordOptions: RecordOption[] = [];
+      records.forEach((record: any, i: number) => {
         const value = record.fields[fieldId];
-        const name = getCellText(value) || `记录 ${recordIds[i]}`;
-        return { id: recordIds[i], name };
+        const name = getCellText(value).trim();
+        if (!name) return;
+        recordOptions.push({ id: recordIds[i], name });
       });
       setRecordList(recordOptions);
     } catch (e) {
