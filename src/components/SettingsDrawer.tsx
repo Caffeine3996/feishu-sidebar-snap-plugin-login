@@ -61,9 +61,15 @@ export default function SettingsDrawer({
       setOperationMode(tempOperationMode);
       setSelectFieldId(tempSelectFieldId);
       setPlatform(tempPlatform);
-      setMultiRecord(tempMultiRecord);
+      setMultiRecord(tempPlatform === "Snapchat" ? true : tempMultiRecord);
     }
   }, [visible, tempRecordId, tempTargetFieldId, tempOperationMode, tempSelectFieldId, tempPlatform, tempMultiRecord]);
+
+  useEffect(() => {
+    if (platform === "Snapchat" && !multiRecord) {
+      setMultiRecord(true);
+    }
+  }, [platform]);
 
   const handleConfirm = () => {
     if (!platform) {
@@ -125,7 +131,7 @@ export default function SettingsDrawer({
             <Radio value="fillEmpty">空白补全</Radio>
           </Radio.Group>
         </Form.Item>
-        {(operationMode === "add" || operationMode === "overwrite") && (
+        {(operationMode === "add" || operationMode === "overwrite") && platform !== "Snapchat" && (
           <Form.Item label="写入方式">
             <Radio.Group
               value={multiRecord}
