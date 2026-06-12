@@ -11,7 +11,8 @@ interface TikTokMediaResult {
     pageNum?: number,
     pageSizeNum?: number,
     customerIdOverride?: string,
-    keywordParam?: string
+    keywordParam?: string,
+    isRefresh?: 0 | 1
   ) => Promise<void>;
 }
 
@@ -27,7 +28,8 @@ export function useTikTokMedia(customerId: string | undefined): TikTokMediaResul
       pageNum: number = tiktokPage,
       pageSizeNum: number = tiktokPageSize,
       customerIdOverride?: string,
-      keywordParam: string = ""
+      keywordParam: string = "",
+      isRefresh: 0 | 1 = 0
     ) => {
       const currentCustomerId = customerIdOverride ?? customerId;
       if (!currentCustomerId) return;
@@ -40,6 +42,7 @@ export function useTikTokMedia(customerId: string | undefined): TikTokMediaResul
             customer_id: currentCustomerId,
             page: String(pageNum),
             page_size: String(pageSizeNum),
+            isRefresh: String(isRefresh),
             ...(keywordParam ? { file_name: keywordParam } : {}),
           }),
         });

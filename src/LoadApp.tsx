@@ -188,7 +188,7 @@ function LoadApp() {
                 } else if (activeTab === "ttd") {
                   fetchTTD(1, ttdPageSize);
                 } else if (activeTab === "tiktok") {
-                  fetchTikTok(1, tiktokPageSize, selectedValue, keyword);
+                  fetchTikTok(1, tiktokPageSize, selectedValue, keyword, 1);
                 } else {
                   fetchAll(1, pageSizeAll);
                 }
