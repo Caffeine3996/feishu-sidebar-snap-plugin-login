@@ -375,7 +375,13 @@ function LoadApp() {
         onClose={() => setUploadVisible(false)}
         onSuccess={() => {
           setUploadVisible(false);
-          fetchSnap(1, pageSize, selectedValue);
+          if (platform === "TTD") {
+            fetchTTD(1, ttdPageSize);
+          } else if (platform === "TikTok" && selectedValue) {
+            fetchTikTok(1, tiktokPageSize, selectedValue, keyword);
+          } else if (selectedValue) {
+            fetchSnap(1, pageSize, selectedValue);
+          }
         }}
       />
       <SettingsDrawer

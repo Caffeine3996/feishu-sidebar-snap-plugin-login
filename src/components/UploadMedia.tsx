@@ -303,7 +303,7 @@ export default function UploadMedia({
 
   return (
     <Modal
-      title="上传素材"
+      title="上传亿帆素材"
       open={visible}
       onCancel={handleClose}
       width={520}
