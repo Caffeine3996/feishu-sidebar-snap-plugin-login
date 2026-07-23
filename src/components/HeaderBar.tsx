@@ -18,6 +18,7 @@ export default function HeaderBar({
   return (
     <div className={styles.selectWrapper}>
       <Select
+        showSearch
         style={{ width: 160 }}
         options={fieldValues}
         value={selectedValue || undefined}
